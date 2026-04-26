@@ -1,5 +1,7 @@
 # VirtROI
 
+Live app: https://da3m0nsec.github.io/VirtROI/
+
 VirtROI is a static web calculator that helps infrastructure and platform teams estimate whether changing virtualization licensing models is financially worth it.
 
 It supports products priced per core/year or per socket/year, lets you enter capacity either as topology or absolute totals, and includes extra annual costs such as HCI TBs, backup, support, or other add-ons.
