@@ -12,6 +12,9 @@ const {
   formatPercent,
   getCurrencyOptions,
   getCostPeriodOptions,
+  getPricingMetricLabelKey,
+  getUnitPriceLabelKey,
+  shouldUseDashedSegment,
   getLanguageOptions,
   translate,
   buildReportModel,
@@ -305,4 +308,26 @@ test('calculateRoi supports annualized and total cost input periods', () => {
   assert.equal(totals.targetAnnualCost, annualized.targetAnnualCost);
   assert.equal(totals.annualSavings, annualized.annualSavings);
   assert.equal(totals.netSavingsAfterMigration, annualized.netSavingsAfterMigration);
+});
+
+
+test('cost period selector appears before product pricing fields', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert.ok(html.indexOf('id="costInputPeriod"') < html.indexOf('data-i18n="forms.currentPricing"'));
+  assert.ok(html.indexOf('id="costInputPeriod"') < html.indexOf('data-i18n="forms.targetPricing"'));
+});
+
+test('pricing metric and unit price labels change for annualized vs total cost periods', () => {
+  assert.equal(getPricingMetricLabelKey('core', 'annual'), 'options.coreYear');
+  assert.equal(getPricingMetricLabelKey('socket', 'annual'), 'options.socketYear');
+  assert.equal(getPricingMetricLabelKey('core', 'total'), 'options.coreTotal');
+  assert.equal(getPricingMetricLabelKey('socket', 'total'), 'options.socketTotal');
+  assert.equal(getUnitPriceLabelKey('annual'), 'forms.unitPriceYear');
+  assert.equal(getUnitPriceLabelKey('total'), 'forms.unitPriceTotal');
+});
+
+test('projected chart segments are dashed only for additional projected years', () => {
+  assert.equal(shouldUseDashedSegment({ projected: false }, { projected: false }), false);
+  assert.equal(shouldUseDashedSegment({ projected: false }, { projected: true }), true);
+  assert.equal(shouldUseDashedSegment({ projected: true }, { projected: true }), true);
 });

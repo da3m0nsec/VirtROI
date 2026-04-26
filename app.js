@@ -74,6 +74,21 @@ function getCostPeriodOptions() {
   return COST_PERIOD_OPTIONS.map((option) => ({ ...option }));
 }
 
+function getPricingMetricLabelKey(metric, costInputPeriod = DEFAULT_INPUTS.costInputPeriod) {
+  if (costInputPeriod === 'total') {
+    return metric === 'socket' ? 'options.socketTotal' : 'options.coreTotal';
+  }
+  return metric === 'socket' ? 'options.socketYear' : 'options.coreYear';
+}
+
+function getUnitPriceLabelKey(costInputPeriod = DEFAULT_INPUTS.costInputPeriod) {
+  return costInputPeriod === 'total' ? 'forms.unitPriceTotal' : 'forms.unitPriceYear';
+}
+
+function shouldUseDashedSegment(previousPoint, currentPoint) {
+  return Boolean((previousPoint && previousPoint.projected) || (currentPoint && currentPoint.projected));
+}
+
 function translate(language, key, replacements = {}) {
   const translations = loadTranslations();
   const template = (translations[language] && translations[language][key]) || (translations.en && translations.en[key]) || key;
@@ -343,6 +358,27 @@ function toggleInputMode(inputMode) {
   }
 }
 
+function refreshPricingPeriodLabels(inputs = getInputs()) {
+  const language = getCurrentLanguage();
+  const period = inputs.costInputPeriod || DEFAULT_INPUTS.costInputPeriod;
+  const unitPriceLabel = translate(language, getUnitPriceLabelKey(period));
+
+  setText('currentUnitPriceLabel', unitPriceLabel);
+  setText('targetUnitPriceLabel', unitPriceLabel);
+
+  [
+    { id: 'currentPricingMetric', metric: inputs.currentPricingMetric || DEFAULT_INPUTS.currentPricingMetric },
+    { id: 'targetPricingMetric', metric: inputs.targetPricingMetric || DEFAULT_INPUTS.targetPricingMetric },
+  ].forEach(({ id }) => {
+    const select = getElement(id);
+    if (!select) return;
+
+    Array.from(select.options).forEach((option) => {
+      option.textContent = translate(language, getPricingMetricLabelKey(option.value, period));
+    });
+  });
+}
+
 function getCurrentLanguage() {
   return getValue('languageSelect', 'en') || 'en';
 }
@@ -569,14 +605,15 @@ function drawChart(canvas, series, keys, colors, formatter) {
   keys.forEach((key, keyIndex) => {
     context.strokeStyle = colors[keyIndex];
     context.lineWidth = 3;
-    context.beginPath();
-    series.forEach((point, index) => {
-      const x = xFor(index);
-      const y = yFor(point[key]);
-      if (index === 0) context.moveTo(x, y);
-      else context.lineTo(x, y);
+    series.slice(1).forEach((point, index) => {
+      const previousPoint = series[index];
+      context.setLineDash(shouldUseDashedSegment(previousPoint, point) ? [8, 7] : []);
+      context.beginPath();
+      context.moveTo(xFor(index), yFor(previousPoint[key]));
+      context.lineTo(xFor(index + 1), yFor(point[key]));
+      context.stroke();
     });
-    context.stroke();
+    context.setLineDash([]);
 
     series.forEach((point, index) => {
       context.fillStyle = colors[keyIndex];
@@ -609,6 +646,7 @@ function calculateAndRender() {
   const inputs = getInputs();
   const result = calculateRoi(inputs);
   toggleInputMode(inputs.inputMode);
+  refreshPricingPeriodLabels(inputs);
   renderResults(result, inputs);
   renderCharts(result, inputs);
 }
@@ -682,6 +720,9 @@ if (typeof module !== 'undefined') {
     formatCurrency,
     getCurrencyOptions,
     getCostPeriodOptions,
+    getPricingMetricLabelKey,
+    getUnitPriceLabelKey,
+    shouldUseDashedSegment,
     formatYears,
     formatPercent,
     getLanguageOptions,

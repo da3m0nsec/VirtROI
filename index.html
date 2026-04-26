@@ -59,6 +59,15 @@
             </label>
 
             <label class="wide">
+              <span data-i18n="forms.costInputPeriod">Cost values entered as</span>
+              <select id="costInputPeriod">
+                <option value="annual" selected data-i18n="options.costPeriodAnnual">Annualized amounts</option>
+                <option value="total" data-i18n="options.costPeriodTotal">Total for analysis period</option>
+              </select>
+              <small data-i18n="forms.costInputPeriodHelp">Use total when quotes already cover the whole analysis period.</small>
+            </label>
+
+            <label class="wide">
               <span data-i18n="forms.capacityMode">Capacity input mode</span>
               <select id="inputMode">
                 <option value="topology" selected data-i18n="options.topology">Hosts × sockets × cores</option>
@@ -105,7 +114,7 @@
               <legend data-i18n="forms.currentPricing">Current product pricing</legend>
               <div class="input-grid compact">
                 <label>
-                  <span data-i18n="forms.pricingUnit">Pricing unit</span>
+                  <span id="currentPricingMetricLabel" data-i18n="forms.pricingUnit">Pricing unit</span>
                   <select id="currentPricingMetric">
                     <option value="core" selected data-i18n="options.coreYear">Per core / year</option>
                     <option value="socket" data-i18n="options.socketYear">Per socket / year</option>
@@ -113,7 +122,7 @@
                 </label>
 
                 <label>
-                  <span data-i18n="forms.unitPriceYear">Unit price / year</span>
+                  <span id="currentUnitPriceLabel" data-i18n="forms.unitPriceYear">Unit price / year</span>
                   <input id="currentUnitPricePerYear" type="number" value="400" min="0" step="1" inputmode="decimal" />
                 </label>
 
@@ -129,7 +138,7 @@
               <legend data-i18n="forms.targetPricing">Target product pricing</legend>
               <div class="input-grid compact">
                 <label>
-                  <span data-i18n="forms.pricingUnit">Pricing unit</span>
+                  <span id="targetPricingMetricLabel" data-i18n="forms.pricingUnit">Pricing unit</span>
                   <select id="targetPricingMetric">
                     <option value="core" data-i18n="options.coreYear">Per core / year</option>
                     <option value="socket" selected data-i18n="options.socketYear">Per socket / year</option>
@@ -137,7 +146,7 @@
                 </label>
 
                 <label>
-                  <span data-i18n="forms.unitPriceYear">Unit price / year</span>
+                  <span id="targetUnitPriceLabel" data-i18n="forms.unitPriceYear">Unit price / year</span>
                   <input id="targetUnitPricePerYear" type="number" value="4500" min="0" step="1" inputmode="decimal" />
                 </label>
 
@@ -176,14 +185,6 @@
               <input id="years" type="number" value="3" min="1" step="1" inputmode="decimal" />
             </label>
 
-            <label>
-              <span data-i18n="forms.costInputPeriod">Cost values entered as</span>
-              <select id="costInputPeriod">
-                <option value="annual" selected data-i18n="options.costPeriodAnnual">Annualized amounts</option>
-                <option value="total" data-i18n="options.costPeriodTotal">Total for analysis period</option>
-              </select>
-              <small data-i18n="forms.costInputPeriodHelp">Use total when quotes already cover the whole analysis period.</small>
-            </label>
           </form>
         </div>
 
