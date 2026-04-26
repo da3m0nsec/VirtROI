@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VirtROI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>VirtROI</h1>
+
+    <h2>Inputs</h2>
+    Hosts <input id="hosts" type="number" value="10"><br>
+    Sockets <input id="socketsPerHost" type="number" value="2"><br>
+    Cores <input id="coresPerSocket" type="number" value="24"><br>
+    $/core <input id="currentPricePerCore" type="number" value="200"><br>
+    $/socket <input id="targetPricePerSocket" type="number" value="600"><br>
+    Migration cost <input id="migrationCost" type="number" value="40000"><br>
+
+    <h2>Results</h2>
+    <p id="result"></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
