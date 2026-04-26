@@ -61,7 +61,15 @@ select {
   color: var(--brand);
 }
 
-.language-picker {
+.toolbar-selectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.language-picker,
+.currency-picker {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -70,7 +78,8 @@ select {
   font-weight: 800;
 }
 
-.language-picker select {
+.language-picker select,
+.currency-picker select {
   width: auto;
   min-width: 132px;
   padding: 8px 10px;
@@ -574,8 +583,9 @@ canvas {
     display: none;
   }
 
-  .language-picker {
+  .toolbar-selectors {
     margin-left: auto;
+    justify-content: flex-end;
   }
 
   main,

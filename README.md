@@ -4,7 +4,7 @@ Live app: https://da3m0nsec.github.io/VirtROI/
 
 VirtROI is a static web calculator that helps infrastructure and platform teams estimate whether changing virtualization licensing models is financially worth it.
 
-It supports products priced per core/year or per socket/year, lets you enter capacity either as topology or absolute totals, and includes extra annual costs such as HCI TBs, backup, support, or other add-ons.
+It supports products priced per core/year or per socket/year, lets you enter capacity either as topology or absolute totals, includes extra costs such as HCI TBs, backup, support, or other add-ons, and can treat recurring cost inputs as either annualized amounts or totals for the whole analysis period.
 
 ## What it calculates
 
@@ -19,6 +19,8 @@ VirtROI estimates:
 - ROI percentage
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
 - dynamic charts for cumulative cost and net savings over time, including two extra projected scenario years
+- currency output in USD, EUR, GBP, JPY, or BRL
+- recurring cost inputs as annualized amounts or totals for the selected analysis period
 - language options for English, Spanish, Portuguese, Italian, Japanese, and German
 - an editable report that can include chart snapshots and be exported to PDF with the browser print dialog
 
@@ -51,9 +53,9 @@ This means you can compare any combination:
 - current per-core vs target per-core
 - current per-socket vs target per-core
 
-## Additional annual costs
+## Additional recurring costs
 
-Both current and target products include an **Additional annual costs** field.
+Both current and target products include an **Additional costs** field.
 
 Use this for recurring costs that are not captured by the base license metric, for example:
 
@@ -72,6 +74,23 @@ VirtROI includes a separate **One-time costs** box for non-recurring project cos
 - bridge renewals / extensions
 
 These values are summed and used for payback, net savings, ROI, and cumulative cost charts.
+
+## Currency and cost input period
+
+The currency selector changes presentation across the calculator, charts, and generated report. Available currencies are:
+
+- USD
+- EUR
+- GBP
+- JPY
+- BRL
+
+The **Cost values entered as** selector controls how recurring license and add-on fields are interpreted:
+
+- **Annualized amounts**: values are already yearly costs.
+- **Total for analysis period**: values are totals covering the selected analysis period; VirtROI annualizes them internally by dividing by the number of years.
+
+One-time costs remain non-recurring and are not annualized.
 
 ## Default scenario
 

@@ -10,6 +10,8 @@ const {
   formatCurrency,
   formatYears,
   formatPercent,
+  getCurrencyOptions,
+  getCostPeriodOptions,
   getLanguageOptions,
   translate,
   buildReportModel,
@@ -253,4 +255,54 @@ test('all locale files expose the same translation keys and cover every data-i18
   assert.deepEqual([...new Set(missing)], []);
   assert.ok(pageKeys.includes('forms.currentPlatform'));
   assert.ok(pageKeys.includes('formulas.roi.description'));
+});
+
+
+test('currency options include five sensible global currencies and format output by selected currency', () => {
+  assert.deepEqual(getCurrencyOptions().map((option) => option.code), ['USD', 'EUR', 'GBP', 'JPY', 'BRL']);
+  assert.equal(formatCurrency(96000, 'EUR'), '€96,000');
+  assert.equal(formatCurrency(96000, 'GBP'), '£96,000');
+  assert.equal(formatCurrency(96000, 'JPY'), '¥96,000');
+  assert.equal(formatCurrency(96000, 'BRL'), 'R$96,000');
+});
+
+test('calculateRoi supports annualized and total cost input periods', () => {
+  assert.deepEqual(getCostPeriodOptions().map((option) => option.code), ['annual', 'total']);
+
+  const annualized = calculateRoi({
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    currentAdditionalAnnualCost: 3000,
+    targetAdditionalAnnualCost: 1500,
+    migrationCost: 40000,
+    years: 3,
+    costInputPeriod: 'annual',
+  });
+
+  const totals = calculateRoi({
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 1200,
+    targetUnitPricePerYear: 13500,
+    currentAdditionalAnnualCost: 9000,
+    targetAdditionalAnnualCost: 4500,
+    migrationCost: 40000,
+    years: 3,
+    costInputPeriod: 'total',
+  });
+
+  assert.equal(totals.currentAnnualCost, annualized.currentAnnualCost);
+  assert.equal(totals.targetAnnualCost, annualized.targetAnnualCost);
+  assert.equal(totals.annualSavings, annualized.annualSavings);
+  assert.equal(totals.netSavingsAfterMigration, annualized.netSavingsAfterMigration);
 });

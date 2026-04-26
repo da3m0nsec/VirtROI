@@ -17,6 +17,8 @@ const DEFAULT_INPUTS = {
   hardwareCost: 0,
   renewalCost: 0,
   years: 3,
+  currency: 'USD',
+  costInputPeriod: 'annual',
 };
 
 const LANGUAGE_OPTIONS = [
@@ -26,6 +28,19 @@ const LANGUAGE_OPTIONS = [
   { code: 'it', name: 'Italiano' },
   { code: 'ja', name: '日本語' },
   { code: 'de', name: 'Deutsch' },
+];
+
+const CURRENCY_OPTIONS = [
+  { code: 'USD', name: 'USD · US Dollar' },
+  { code: 'EUR', name: 'EUR · Euro' },
+  { code: 'GBP', name: 'GBP · Pound Sterling' },
+  { code: 'JPY', name: 'JPY · Japanese Yen' },
+  { code: 'BRL', name: 'BRL · Brazilian Real' },
+];
+
+const COST_PERIOD_OPTIONS = [
+  { code: 'annual', labelKey: 'options.costPeriodAnnual' },
+  { code: 'total', labelKey: 'options.costPeriodTotal' },
 ];
 
 let translationsCache = null;
@@ -49,6 +64,14 @@ function loadTranslations() {
 
 function getLanguageOptions() {
   return LANGUAGE_OPTIONS.map((option) => ({ ...option }));
+}
+
+function getCurrencyOptions() {
+  return CURRENCY_OPTIONS.map((option) => ({ ...option }));
+}
+
+function getCostPeriodOptions() {
+  return COST_PERIOD_OPTIONS.map((option) => ({ ...option }));
 }
 
 function translate(language, key, replacements = {}) {
@@ -90,19 +113,25 @@ function calculateLicenseCost(metric, unitPrice, totalSockets, totalCores) {
   return quantity * toFiniteNumber(unitPrice);
 }
 
+function annualizeCost(value, costInputPeriod, years) {
+  const amount = toFiniteNumber(value);
+  return costInputPeriod === 'total' ? amount / Math.max(1, years) : amount;
+}
+
 function calculateRoi(inputs) {
   const { totalSockets, totalCores } = resolveCapacity(inputs);
   const currentPricingMetric = inputs.currentPricingMetric || DEFAULT_INPUTS.currentPricingMetric;
   const targetPricingMetric = inputs.targetPricingMetric || DEFAULT_INPUTS.targetPricingMetric;
-  const currentUnitPricePerYear = inputs.currentUnitPricePerYear ?? inputs.currentPricePerCorePerYear ?? DEFAULT_INPUTS.currentUnitPricePerYear;
-  const targetUnitPricePerYear = inputs.targetUnitPricePerYear ?? inputs.targetPricePerSocketPerYear ?? DEFAULT_INPUTS.targetUnitPricePerYear;
-  const currentAdditionalAnnualCost = toFiniteNumber(inputs.currentAdditionalAnnualCost);
-  const targetAdditionalAnnualCost = toFiniteNumber(inputs.targetAdditionalAnnualCost);
+  const years = toFiniteNumber(inputs.years, DEFAULT_INPUTS.years);
+  const costInputPeriod = inputs.costInputPeriod || DEFAULT_INPUTS.costInputPeriod;
+  const currentUnitPricePerYear = annualizeCost(inputs.currentUnitPricePerYear ?? inputs.currentPricePerCorePerYear ?? DEFAULT_INPUTS.currentUnitPricePerYear, costInputPeriod, years);
+  const targetUnitPricePerYear = annualizeCost(inputs.targetUnitPricePerYear ?? inputs.targetPricePerSocketPerYear ?? DEFAULT_INPUTS.targetUnitPricePerYear, costInputPeriod, years);
+  const currentAdditionalAnnualCost = annualizeCost(inputs.currentAdditionalAnnualCost, costInputPeriod, years);
+  const targetAdditionalAnnualCost = annualizeCost(inputs.targetAdditionalAnnualCost, costInputPeriod, years);
   const migrationCost = toFiniteNumber(inputs.migrationCost);
   const hardwareCost = toFiniteNumber(inputs.hardwareCost);
   const renewalCost = toFiniteNumber(inputs.renewalCost);
   const oneTimeCosts = migrationCost + hardwareCost + renewalCost;
-  const years = toFiniteNumber(inputs.years, DEFAULT_INPUTS.years);
 
   const currentLicenseAnnualCost = calculateLicenseCost(currentPricingMetric, currentUnitPricePerYear, totalSockets, totalCores);
   const targetLicenseAnnualCost = calculateLicenseCost(targetPricingMetric, targetUnitPricePerYear, totalSockets, totalCores);
@@ -182,12 +211,12 @@ function getDecision(result) {
   };
 }
 
-function formatCurrency(value) {
+function formatCurrency(value, currency = DEFAULT_INPUTS.currency) {
   const amount = toFiniteNumber(value);
   const absolute = Math.abs(amount);
   const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     maximumFractionDigits: 0,
   }).format(absolute);
   return amount < 0 ? `-${formatted}` : formatted;
@@ -209,7 +238,7 @@ function formatPercent(value, language = 'en') {
   return `${roundTo(value, 1).toLocaleString('en-US')}%`;
 }
 
-function buildReportModel(inputs, result, language = 'en') {
+function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_INPUTS.currency) {
   const currentPlatform = inputs.currentPlatform || DEFAULT_INPUTS.currentPlatform;
   const targetPlatform = inputs.targetPlatform || DEFAULT_INPUTS.targetPlatform;
   const years = toFiniteNumber(inputs.years, DEFAULT_INPUTS.years);
@@ -220,19 +249,19 @@ function buildReportModel(inputs, result, language = 'en') {
     summary: translate(language, 'report.summary', {
       currentPlatform,
       targetPlatform,
-      annualSavings: formatCurrency(result.annualSavings),
+      annualSavings: formatCurrency(result.annualSavings, currency),
       payback: formatYears(result.paybackYears, language),
-      netSavings: formatCurrency(result.netSavingsAfterMigration),
+      netSavings: formatCurrency(result.netSavingsAfterMigration, currency),
       years,
       yearLabel,
     }),
     metrics: [
-      { label: translate(language, 'report.metric.currentAnnualCost', { platform: currentPlatform }), value: formatCurrency(result.currentAnnualCost) },
-      { label: translate(language, 'report.metric.targetAnnualCost', { platform: targetPlatform }), value: formatCurrency(result.targetAnnualCost) },
-      { label: translate(language, 'report.metric.annualSavings'), value: formatCurrency(result.annualSavings) },
-      { label: translate(language, 'report.metric.oneTimeCosts'), value: formatCurrency(result.oneTimeCosts) },
+      { label: translate(language, 'report.metric.currentAnnualCost', { platform: currentPlatform }), value: formatCurrency(result.currentAnnualCost, currency) },
+      { label: translate(language, 'report.metric.targetAnnualCost', { platform: targetPlatform }), value: formatCurrency(result.targetAnnualCost, currency) },
+      { label: translate(language, 'report.metric.annualSavings'), value: formatCurrency(result.annualSavings, currency) },
+      { label: translate(language, 'report.metric.oneTimeCosts'), value: formatCurrency(result.oneTimeCosts, currency) },
       { label: translate(language, 'report.metric.paybackPeriod'), value: formatYears(result.paybackYears, language) },
-      { label: translate(language, 'report.metric.netSavings'), value: formatCurrency(result.netSavingsAfterMigration) },
+      { label: translate(language, 'report.metric.netSavings'), value: formatCurrency(result.netSavingsAfterMigration, currency) },
       { label: translate(language, 'report.metric.roi'), value: formatPercent(result.roiPercent, language) },
       {
         label: translate(language, 'report.metric.capacity'),
@@ -298,6 +327,8 @@ function getInputs() {
     hardwareCost: toFiniteNumber(getValue('hardwareCost', DEFAULT_INPUTS.hardwareCost)),
     renewalCost: toFiniteNumber(getValue('renewalCost', DEFAULT_INPUTS.renewalCost)),
     years: toFiniteNumber(getValue('years', DEFAULT_INPUTS.years), DEFAULT_INPUTS.years),
+    currency: getValue('currencySelect', DEFAULT_INPUTS.currency),
+    costInputPeriod: getValue('costInputPeriod', DEFAULT_INPUTS.costInputPeriod),
   };
 }
 
@@ -314,6 +345,10 @@ function toggleInputMode(inputMode) {
 
 function getCurrentLanguage() {
   return getValue('languageSelect', 'en') || 'en';
+}
+
+function getCurrentCurrency() {
+  return getValue('currencySelect', DEFAULT_INPUTS.currency) || DEFAULT_INPUTS.currency;
 }
 
 function applyTranslations(language = getCurrentLanguage()) {
@@ -340,6 +375,32 @@ function applyTranslations(language = getCurrentLanguage()) {
   });
 }
 
+function initializeCurrencySelector() {
+  const selector = getElement('currencySelect');
+  if (!selector) return;
+
+  selector.innerHTML = getCurrencyOptions()
+    .map((option) => `<option value="${option.code}">${option.name}</option>`)
+    .join('');
+  selector.value = DEFAULT_INPUTS.currency;
+  selector.addEventListener('change', calculateAndRender);
+}
+
+function initializeCostPeriodSelector() {
+  const selector = getElement('costInputPeriod');
+  if (!selector) return;
+
+  const selectedValue = selector.value || DEFAULT_INPUTS.costInputPeriod;
+  selector.innerHTML = getCostPeriodOptions()
+    .map((option) => `<option value="${option.code}">${translate(getCurrentLanguage(), option.labelKey)}</option>`)
+    .join('');
+  selector.value = getCostPeriodOptions().some((option) => option.code === selectedValue) ? selectedValue : DEFAULT_INPUTS.costInputPeriod;
+  if (!selector.dataset.initialized) {
+    selector.addEventListener('change', calculateAndRender);
+    selector.dataset.initialized = 'true';
+  }
+}
+
 function initializeLanguageSelector() {
   const selector = getElement('languageSelect');
   if (!selector) return;
@@ -350,6 +411,7 @@ function initializeLanguageSelector() {
   selector.value = 'en';
   selector.addEventListener('change', () => {
     applyTranslations(selector.value);
+    initializeCostPeriodSelector();
     calculateAndRender();
   });
 }
@@ -373,7 +435,7 @@ function generateReport() {
   const result = calculateRoi(inputs);
   renderCharts(result, inputs);
   const language = getCurrentLanguage();
-  const report = buildReportModel(inputs, result, language);
+  const report = buildReportModel(inputs, result, language, inputs.currency);
   const costChart = getChartImage('costChart');
   const savingsChart = getChartImage('savingsChart');
   const chartImages = [costChart, savingsChart].filter(Boolean);
@@ -416,34 +478,35 @@ function exportReportToPdf() {
 
 function renderResults(result, inputs) {
   const language = getCurrentLanguage();
+  const currency = inputs.currency || getCurrentCurrency();
   const decision = getDecision(result);
   const decisionCard = getElement('decisionCard');
   const periodLabel = `${inputs.years} ${translate(language, inputs.years === 1 ? 'format.year' : 'format.years')}`;
-  const currentLicense = formatCurrency(result.currentLicenseAnnualCost);
-  const currentAddons = formatCurrency(inputs.currentAdditionalAnnualCost);
-  const targetLicense = formatCurrency(result.targetLicenseAnnualCost);
-  const targetAddons = formatCurrency(inputs.targetAdditionalAnnualCost);
-  const migrationCost = formatCurrency(inputs.migrationCost);
-  const hardwareCost = formatCurrency(inputs.hardwareCost);
-  const renewalCost = formatCurrency(inputs.renewalCost);
+  const currentLicense = formatCurrency(result.currentLicenseAnnualCost, currency);
+  const currentAddons = formatCurrency(inputs.currentAdditionalAnnualCost, currency);
+  const targetLicense = formatCurrency(result.targetLicenseAnnualCost, currency);
+  const targetAddons = formatCurrency(inputs.targetAdditionalAnnualCost, currency);
+  const migrationCost = formatCurrency(inputs.migrationCost, currency);
+  const hardwareCost = formatCurrency(inputs.hardwareCost, currency);
+  const renewalCost = formatCurrency(inputs.renewalCost, currency);
 
   setHtml('currentAnnualCostLabel', `${escapeHtml(inputs.currentPlatform)} ${escapeHtml(translate(language, 'metrics.currentAnnualCost'))}`);
   setHtml('targetAnnualCostLabel', `${escapeHtml(inputs.targetPlatform)} ${escapeHtml(translate(language, 'metrics.targetAnnualCost'))}`);
   setText('totalCores', result.totalCores.toLocaleString('en-US'));
   setText('totalSockets', result.totalSockets.toLocaleString('en-US'));
-  setText('currentAnnualCost', formatCurrency(result.currentAnnualCost));
-  setText('targetAnnualCost', formatCurrency(result.targetAnnualCost));
+  setText('currentAnnualCost', formatCurrency(result.currentAnnualCost, currency));
+  setText('targetAnnualCost', formatCurrency(result.targetAnnualCost, currency));
   setHtml('currentAnnualCostBreakdown', `${escapeHtml(translate(language, 'metrics.license'))} <span id="currentLicenseAnnualCost">${escapeHtml(currentLicense)}</span> + ${escapeHtml(translate(language, 'metrics.addons'))} <span id="currentAdditionalCostDisplay">${escapeHtml(currentAddons)}</span>`);
   setHtml('targetAnnualCostBreakdown', `${escapeHtml(translate(language, 'metrics.license'))} <span id="targetLicenseAnnualCost">${escapeHtml(targetLicense)}</span> + ${escapeHtml(translate(language, 'metrics.addons'))} <span id="targetAdditionalCostDisplay">${escapeHtml(targetAddons)}</span>`);
-  setText('oneTimeCosts', formatCurrency(result.oneTimeCosts));
+  setText('oneTimeCosts', formatCurrency(result.oneTimeCosts, currency));
   setHtml('oneTimeCostsBreakdown', translate(language, 'metrics.oneTimeBreakdown', {
     migration: `<span id="migrationCostDisplay">${escapeHtml(migrationCost)}</span>`,
     hardware: `<span id="hardwareCostDisplay">${escapeHtml(hardwareCost)}</span>`,
     renewals: `<span id="renewalCostDisplay">${escapeHtml(renewalCost)}</span>`,
   }));
-  setText('annualSavings', formatCurrency(result.annualSavings));
+  setText('annualSavings', formatCurrency(result.annualSavings, currency));
   setText('paybackYears', formatYears(result.paybackYears, language));
-  setText('netSavingsAfterMigration', formatCurrency(result.netSavingsAfterMigration));
+  setText('netSavingsAfterMigration', formatCurrency(result.netSavingsAfterMigration, currency));
   setText('roiPercent', formatPercent(result.roiPercent, language));
   setHtml('analysisPeriodBreakdown', translate(language, 'metrics.overPeriod', {
     period: `<span id="analysisPeriodLabel">${escapeHtml(periodLabel)}</span>`,
@@ -531,14 +594,14 @@ function renderCharts(result, inputs) {
     series,
     ['currentCost', 'targetCost'],
     ['#2155d6', '#0f8f5f'],
-    formatCurrency,
+    (value) => formatCurrency(value, inputs.currency || getCurrentCurrency()),
   );
   drawChart(
     getElement('savingsChart'),
     series,
     ['netSavings'],
     ['#7c3aed'],
-    formatCurrency,
+    (value) => formatCurrency(value, inputs.currency || getCurrentCurrency()),
   );
 }
 
@@ -587,6 +650,8 @@ function initializeApp() {
     input.addEventListener('change', calculateAndRender);
   });
   initializeLanguageSelector();
+  initializeCurrencySelector();
+  initializeCostPeriodSelector();
   initializeTabs();
 
   const generateReportButton = getElement('generateReport');
@@ -615,6 +680,8 @@ if (typeof module !== 'undefined') {
     buildChartSeries,
     getDecision,
     formatCurrency,
+    getCurrencyOptions,
+    getCostPeriodOptions,
     formatYears,
     formatPercent,
     getLanguageOptions,

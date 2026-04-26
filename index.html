@@ -15,7 +15,10 @@
       <a href="#charts" data-tab-link="charts-panel" data-i18n="nav.charts">Charts</a>
       <a href="#formulas" data-i18n="nav.formulas">Formulas</a>
       <a href="#report" data-tab-link="report-panel" data-i18n="nav.report">Report</a>
-      <label class="language-picker"><span data-i18n="language.label">Language</span><select id="languageSelect" aria-label="Language"></select></label>
+      <div class="toolbar-selectors">
+        <label class="language-picker"><span data-i18n="language.label">Language</span><select id="languageSelect" aria-label="Language"></select></label>
+        <label class="currency-picker"><span data-i18n="currency.label">Currency</span><select id="currencySelect" aria-label="Currency" data-i18n-attr="aria-label:currency.label"></select></label>
+      </div>
     </nav>
 
     <section id="top" class="hero-content">
@@ -171,6 +174,15 @@
             <label>
               <span data-i18n="forms.analysisPeriod">Analysis period, years</span>
               <input id="years" type="number" value="3" min="1" step="1" inputmode="decimal" />
+            </label>
+
+            <label>
+              <span data-i18n="forms.costInputPeriod">Cost values entered as</span>
+              <select id="costInputPeriod">
+                <option value="annual" selected data-i18n="options.costPeriodAnnual">Annualized amounts</option>
+                <option value="total" data-i18n="options.costPeriodTotal">Total for analysis period</option>
+              </select>
+              <small data-i18n="forms.costInputPeriodHelp">Use total when quotes already cover the whole analysis period.</small>
             </label>
           </form>
         </div>
