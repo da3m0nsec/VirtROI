@@ -15,6 +15,7 @@ const {
   getPricingMetricLabelKey,
   getUnitPriceLabelKey,
   shouldUseDashedSegment,
+  buildDashedLineSegments,
   getLanguageOptions,
   translate,
   buildReportModel,
@@ -330,4 +331,13 @@ test('projected chart segments are dashed only for additional projected years', 
   assert.equal(shouldUseDashedSegment({ projected: false }, { projected: false }), false);
   assert.equal(shouldUseDashedSegment({ projected: false }, { projected: true }), true);
   assert.equal(shouldUseDashedSegment({ projected: true }, { projected: true }), true);
+});
+
+
+test('projected chart dashes are rendered as separate line segments with visible gaps', () => {
+  const segments = buildDashedLineSegments({ x: 0, y: 0 }, { x: 100, y: 0 }, 12, 10);
+  assert.ok(segments.length >= 4);
+  assert.deepEqual(segments[0], { from: { x: 0, y: 0 }, to: { x: 12, y: 0 } });
+  assert.ok(segments[1].from.x > segments[0].to.x, 'second dash starts after a gap');
+  assert.ok(segments.at(-1).to.x <= 100);
 });

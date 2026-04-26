@@ -89,6 +89,36 @@ function shouldUseDashedSegment(previousPoint, currentPoint) {
   return Boolean((previousPoint && previousPoint.projected) || (currentPoint && currentPoint.projected));
 }
 
+function buildDashedLineSegments(from, to, dashLength = 12, gapLength = 10) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance === 0) return [];
+
+  const segments = [];
+  const ux = dx / distance;
+  const uy = dy / distance;
+  let cursor = 0;
+
+  while (cursor < distance) {
+    const start = cursor;
+    const end = Math.min(cursor + dashLength, distance);
+    segments.push({
+      from: {
+        x: from.x + ux * start,
+        y: from.y + uy * start,
+      },
+      to: {
+        x: from.x + ux * end,
+        y: from.y + uy * end,
+      },
+    });
+    cursor += dashLength + gapLength;
+  }
+
+  return segments;
+}
+
 function translate(language, key, replacements = {}) {
   const translations = loadTranslations();
   const template = (translations[language] && translations[language][key]) || (translations.en && translations.en[key]) || key;
@@ -555,6 +585,16 @@ function renderResults(result, inputs) {
   }
 }
 
+function drawChartSegment(context, from, to, dashed) {
+  const segments = dashed ? buildDashedLineSegments(from, to, 12, 10) : [{ from, to }];
+  segments.forEach((segment) => {
+    context.beginPath();
+    context.moveTo(segment.from.x, segment.from.y);
+    context.lineTo(segment.to.x, segment.to.y);
+    context.stroke();
+  });
+}
+
 function drawChart(canvas, series, keys, colors, formatter) {
   if (!canvas || typeof canvas.getContext !== 'function') {
     return;
@@ -605,15 +645,16 @@ function drawChart(canvas, series, keys, colors, formatter) {
   keys.forEach((key, keyIndex) => {
     context.strokeStyle = colors[keyIndex];
     context.lineWidth = 3;
+    context.lineCap = 'round';
     series.slice(1).forEach((point, index) => {
       const previousPoint = series[index];
-      context.setLineDash(shouldUseDashedSegment(previousPoint, point) ? [8, 7] : []);
-      context.beginPath();
-      context.moveTo(xFor(index), yFor(previousPoint[key]));
-      context.lineTo(xFor(index + 1), yFor(point[key]));
-      context.stroke();
+      drawChartSegment(
+        context,
+        { x: xFor(index), y: yFor(previousPoint[key]) },
+        { x: xFor(index + 1), y: yFor(point[key]) },
+        shouldUseDashedSegment(previousPoint, point),
+      );
     });
-    context.setLineDash([]);
 
     series.forEach((point, index) => {
       context.fillStyle = colors[keyIndex];
@@ -723,6 +764,7 @@ if (typeof module !== 'undefined') {
     getPricingMetricLabelKey,
     getUnitPriceLabelKey,
     shouldUseDashedSegment,
+    buildDashedLineSegments,
     formatYears,
     formatPercent,
     getLanguageOptions,
