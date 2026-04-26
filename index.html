@@ -12,6 +12,7 @@
     <nav class="nav" aria-label="Primary navigation">
       <a class="brand" href="#top" aria-label="VirtROI home">VirtROI</a>
       <a href="#calculator">Calculator</a>
+      <a href="#charts" data-tab-link="charts-panel">Charts</a>
       <a href="#formulas">Formulas</a>
     </nav>
 
@@ -19,114 +20,224 @@
       <p class="eyebrow">Virtualization cost strategy</p>
       <h1>Calculate whether changing your virtualization stack is financially worth it.</h1>
       <p class="hero-copy">
-        Compare a current per-core renewal, such as VMware, against a target per-socket alternative,
-        such as Morpheus VM Essentials. Estimate annual savings, payback, and multi-year ROI in seconds.
+        Compare products priced by core or by socket, include add-on costs such as vSAN capacity,
+        and visualize cumulative cost, savings, payback, and ROI over time.
       </p>
     </section>
   </header>
 
   <main>
-    <section id="calculator" class="calculator-shell" aria-labelledby="calculator-title">
-      <div class="panel input-panel">
+    <div class="tabs" role="tablist" aria-label="VirtROI views">
+      <button id="calculator-tab" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="calculator-panel" data-tab-target="calculator-panel">Calculator</button>
+      <button id="charts-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="charts-panel" data-tab-target="charts-panel">Dynamic charts</button>
+    </div>
+
+    <section id="calculator-panel" role="tabpanel" aria-labelledby="calculator-tab" data-tab-panel="calculator-panel">
+      <section id="calculator" class="calculator-shell" aria-labelledby="calculator-title">
+        <div class="panel input-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Scenario inputs</p>
+            <h2 id="calculator-title">Build your comparison</h2>
+            <p>Default values model a VMware renewal at $200/core/year vs Morpheus VM Essentials at $600/socket/year.</p>
+          </div>
+
+          <form class="input-grid" aria-label="Virtualization ROI inputs">
+            <label class="wide">
+              <span>Current platform</span>
+              <input id="currentPlatform" type="text" value="VMware" autocomplete="off" />
+            </label>
+
+            <label class="wide">
+              <span>Target platform</span>
+              <input id="targetPlatform" type="text" value="Morpheus VM Essentials" autocomplete="off" />
+            </label>
+
+            <label class="wide">
+              <span>Capacity input mode</span>
+              <select id="inputMode">
+                <option value="topology" selected>Hosts × sockets × cores</option>
+                <option value="absolute">Absolute sockets and cores</option>
+              </select>
+            </label>
+
+            <fieldset id="topologyFields" class="field-group wide">
+              <legend>Topology</legend>
+              <div class="input-grid compact">
+                <label>
+                  <span>Hosts</span>
+                  <input id="hosts" type="number" value="10" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label>
+                  <span>Sockets per host</span>
+                  <input id="socketsPerHost" type="number" value="2" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label>
+                  <span>Cores per socket</span>
+                  <input id="coresPerSocket" type="number" value="24" min="0" step="1" inputmode="decimal" />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset id="absoluteFields" class="field-group wide" hidden>
+              <legend>Absolute capacity</legend>
+              <div class="input-grid compact">
+                <label>
+                  <span>Total sockets</span>
+                  <input id="absoluteSockets" type="number" value="20" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label>
+                  <span>Total cores</span>
+                  <input id="absoluteCores" type="number" value="480" min="0" step="1" inputmode="decimal" />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-group wide">
+              <legend>Current product pricing</legend>
+              <div class="input-grid compact">
+                <label>
+                  <span>Pricing unit</span>
+                  <select id="currentPricingMetric">
+                    <option value="core" selected>Per core / year</option>
+                    <option value="socket">Per socket / year</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Unit price / year</span>
+                  <input id="currentUnitPricePerYear" type="number" value="200" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label>
+                  <span>Additional annual costs</span>
+                  <input id="currentAdditionalAnnualCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
+                  <small>Example: vSAN TBs, support uplift, add-ons.</small>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-group wide">
+              <legend>Target product pricing</legend>
+              <div class="input-grid compact">
+                <label>
+                  <span>Pricing unit</span>
+                  <select id="targetPricingMetric">
+                    <option value="core">Per core / year</option>
+                    <option value="socket" selected>Per socket / year</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Unit price / year</span>
+                  <input id="targetUnitPricePerYear" type="number" value="600" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label>
+                  <span>Additional annual costs</span>
+                  <input id="targetAdditionalAnnualCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
+                  <small>Example: vSAN TBs, backup, support, storage add-ons.</small>
+                </label>
+              </div>
+            </fieldset>
+
+            <label>
+              <span>One-time migration cost</span>
+              <input id="migrationCost" type="number" value="40000" min="0" step="100" inputmode="decimal" />
+            </label>
+
+            <label>
+              <span>Analysis period, years</span>
+              <input id="years" type="number" value="3" min="1" step="1" inputmode="decimal" />
+            </label>
+          </form>
+        </div>
+
+        <div class="panel results-panel" aria-live="polite">
+          <div id="decisionCard" class="decision-card strong">
+            <p class="eyebrow">Decision signal</p>
+            <h2 id="decisionLabel">Strong case</h2>
+            <p id="decisionSummary">The financial case is strong.</p>
+          </div>
+
+          <div class="result-grid">
+            <article class="metric-card">
+              <span class="metric-label"><span id="currentPlatformLabel">VMware</span> annual cost</span>
+              <strong id="currentAnnualCost">$96,000</strong>
+              <small>License <span id="currentLicenseAnnualCost">$96,000</span> + add-ons <span id="currentAdditionalCostDisplay">$0</span></small>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label"><span id="targetPlatformLabel">Morpheus VM Essentials</span> annual cost</span>
+              <strong id="targetAnnualCost">$12,000</strong>
+              <small>License <span id="targetLicenseAnnualCost">$12,000</span> + add-ons <span id="targetAdditionalCostDisplay">$0</span></small>
+            </article>
+
+            <article class="metric-card highlight">
+              <span class="metric-label">Annual savings</span>
+              <strong id="annualSavings">$84,000</strong>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label">Payback period</span>
+              <strong id="paybackYears">0.48 years</strong>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label">Net savings after migration</span>
+              <strong id="netSavingsAfterMigration">$212,000</strong>
+              <small>Over <span id="analysisPeriodLabel">3 years</span></small>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label">ROI</span>
+              <strong id="roiPercent">530%</strong>
+            </article>
+          </div>
+
+          <div class="capacity-strip" aria-label="Infrastructure capacity summary">
+            <span><strong id="totalCores">480</strong> total cores</span>
+            <span><strong id="totalSockets">20</strong> total sockets</span>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section id="charts-panel" class="chart-panel" role="tabpanel" aria-labelledby="charts-tab" data-tab-panel="charts-panel" hidden>
+      <section id="charts" class="panel charts" aria-labelledby="charts-title">
         <div class="section-heading">
-          <p class="eyebrow">Scenario inputs</p>
-          <h2 id="calculator-title">Build your comparison</h2>
-          <p>Default values model a VMware renewal at $200/core/year vs Morpheus VM Essentials at $600/socket/year.</p>
+          <p class="eyebrow">Dynamic charts</p>
+          <h2 id="charts-title">Visualize the business case over time</h2>
+          <p>Charts update instantly as you change pricing unit, capacity, add-on costs, migration cost, or analysis period.</p>
         </div>
 
-        <form class="input-grid" aria-label="Virtualization ROI inputs">
-          <label>
-            <span>Current platform</span>
-            <input id="currentPlatform" type="text" value="VMware" autocomplete="off" />
-          </label>
-
-          <label>
-            <span>Target platform</span>
-            <input id="targetPlatform" type="text" value="Morpheus VM Essentials" autocomplete="off" />
-          </label>
-
-          <label>
-            <span>Hosts</span>
-            <input id="hosts" type="number" value="10" min="0" step="1" inputmode="decimal" />
-          </label>
-
-          <label>
-            <span>Sockets per host</span>
-            <input id="socketsPerHost" type="number" value="2" min="0" step="1" inputmode="decimal" />
-          </label>
-
-          <label>
-            <span>Cores per socket</span>
-            <input id="coresPerSocket" type="number" value="24" min="0" step="1" inputmode="decimal" />
-          </label>
-
-          <label>
-            <span>Current price / core / year</span>
-            <input id="currentPricePerCorePerYear" type="number" value="200" min="0" step="1" inputmode="decimal" />
-          </label>
-
-          <label>
-            <span>Target price / socket / year</span>
-            <input id="targetPricePerSocketPerYear" type="number" value="600" min="0" step="1" inputmode="decimal" />
-          </label>
-
-          <label>
-            <span>One-time migration cost</span>
-            <input id="migrationCost" type="number" value="40000" min="0" step="100" inputmode="decimal" />
-          </label>
-
-          <label>
-            <span>Analysis period, years</span>
-            <input id="years" type="number" value="3" min="1" step="1" inputmode="decimal" />
-          </label>
-        </form>
-      </div>
-
-      <div class="panel results-panel" aria-live="polite">
-        <div id="decisionCard" class="decision-card strong">
-          <p class="eyebrow">Decision signal</p>
-          <h2 id="decisionLabel">Strong case</h2>
-          <p id="decisionSummary">The financial case is strong.</p>
-        </div>
-
-        <div class="result-grid">
-          <article class="metric-card">
-            <span class="metric-label"><span id="currentPlatformLabel">VMware</span> annual cost</span>
-            <strong id="currentAnnualCost">$96,000</strong>
+        <div class="chart-grid">
+          <article class="chart-card">
+            <div class="chart-heading">
+              <h3>Cumulative cost</h3>
+              <p>Current platform vs target platform including migration cost.</p>
+            </div>
+            <canvas id="costChart" aria-label="Cumulative cost chart" role="img"></canvas>
+            <div class="legend">
+              <span><i class="legend-current"></i> Current</span>
+              <span><i class="legend-target"></i> Target + migration</span>
+            </div>
           </article>
 
-          <article class="metric-card">
-            <span class="metric-label"><span id="targetPlatformLabel">Morpheus VM Essentials</span> annual cost</span>
-            <strong id="targetAnnualCost">$12,000</strong>
-          </article>
-
-          <article class="metric-card highlight">
-            <span class="metric-label">Annual savings</span>
-            <strong id="annualSavings">$84,000</strong>
-          </article>
-
-          <article class="metric-card">
-            <span class="metric-label">Payback period</span>
-            <strong id="paybackYears">0.48 years</strong>
-          </article>
-
-          <article class="metric-card">
-            <span class="metric-label">Net savings after migration</span>
-            <strong id="netSavingsAfterMigration">$212,000</strong>
-            <small>Over <span id="analysisPeriodLabel">3 years</span></small>
-          </article>
-
-          <article class="metric-card">
-            <span class="metric-label">ROI</span>
-            <strong id="roiPercent">530%</strong>
+          <article class="chart-card">
+            <div class="chart-heading">
+              <h3>Net savings</h3>
+              <p>Positive values mean the target platform has recovered migration cost and is saving money.</p>
+            </div>
+            <canvas id="savingsChart" aria-label="Net savings chart" role="img"></canvas>
+            <div class="legend">
+              <span><i class="legend-savings"></i> Net savings</span>
+            </div>
           </article>
         </div>
-
-        <div class="capacity-strip" aria-label="Infrastructure capacity summary">
-          <span><strong id="totalCores">480</strong> total cores</span>
-          <span><strong id="totalSockets">20</strong> total sockets</span>
-        </div>
-      </div>
+      </section>
     </section>
 
     <section id="formulas" class="panel formulas" aria-labelledby="formulas-title">
@@ -135,10 +246,10 @@
         <h2 id="formulas-title">Formulas used by VirtROI</h2>
       </div>
       <dl class="formula-grid">
-        <div><dt>Total cores</dt><dd>hosts × sockets per host × cores per socket</dd></div>
-        <div><dt>Total sockets</dt><dd>hosts × sockets per host</dd></div>
-        <div><dt>Current annual cost</dt><dd>total cores × current price/core/year</dd></div>
-        <div><dt>Target annual cost</dt><dd>total sockets × target price/socket/year</dd></div>
+        <div><dt>Total cores</dt><dd>topology mode: hosts × sockets per host × cores per socket; absolute mode: total cores</dd></div>
+        <div><dt>Total sockets</dt><dd>topology mode: hosts × sockets per host; absolute mode: total sockets</dd></div>
+        <div><dt>License annual cost</dt><dd>unit price × selected metric quantity: cores or sockets</dd></div>
+        <div><dt>Total annual cost</dt><dd>license annual cost + additional annual costs</dd></div>
         <div><dt>Annual savings</dt><dd>current annual cost − target annual cost</dd></div>
         <div><dt>Payback years</dt><dd>migration cost ÷ annual savings</dd></div>
         <div><dt>Net savings</dt><dd>annual savings × years − migration cost</dd></div>

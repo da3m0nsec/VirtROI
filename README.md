@@ -2,7 +2,7 @@
 
 VirtROI is a static web calculator that helps infrastructure and platform teams estimate whether changing virtualization licensing models is financially worth it.
 
-The first product scenario compares a current VMware-style renewal priced per core/year against a target Morpheus VM Essentials-style alternative priced per socket/year.
+It supports products priced per core/year or per socket/year, lets you enter capacity either as topology or absolute totals, and includes extra annual costs such as vSAN TBs, backup, support, or other add-ons.
 
 ## What it calculates
 
@@ -10,11 +10,54 @@ VirtROI estimates:
 
 - current annual licensing cost
 - target annual licensing cost
+- additional annual costs for each product
 - annual savings
 - migration payback period
 - net savings across an analysis period
 - ROI percentage
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
+- dynamic charts for cumulative cost and net savings over time
+
+## Capacity input modes
+
+You can model capacity in two ways:
+
+1. **Hosts × sockets × cores**
+   - hosts
+   - sockets per host
+   - cores per socket
+
+2. **Absolute sockets and cores**
+   - total sockets
+   - total cores
+
+The absolute mode is useful when you already know your licensed socket/core totals and do not want to model host topology.
+
+## Pricing models
+
+Each product can be priced independently:
+
+- per core / year
+- per socket / year
+
+This means you can compare any combination:
+
+- current per-core vs target per-socket
+- current per-socket vs target per-socket
+- current per-core vs target per-core
+- current per-socket vs target per-core
+
+## Additional annual costs
+
+Both current and target products include an **Additional annual costs** field.
+
+Use this for recurring costs that are not captured by the base license metric, for example:
+
+- vSAN TB capacity
+- backup add-ons
+- support uplift
+- management tooling
+- storage or replication licensing
 
 ## Default scenario
 
@@ -24,11 +67,16 @@ The default values model this comparison:
 | --- | ---: |
 | Current platform | VMware |
 | Target platform | Morpheus VM Essentials |
+| Capacity mode | Hosts × sockets × cores |
 | Hosts | 10 |
 | Sockets per host | 2 |
 | Cores per socket | 24 |
-| Current price/core/year | $200 |
-| Target price/socket/year | $600 |
+| Current pricing unit | Per core / year |
+| Current unit price | $200 |
+| Target pricing unit | Per socket / year |
+| Target unit price | $600 |
+| Current additional annual costs | $0 |
+| Target additional annual costs | $0 |
 | One-time migration cost | $40,000 |
 | Analysis period | 3 years |
 
@@ -45,13 +93,24 @@ Default result:
 | Net savings after migration, 3 years | $212,000 |
 | ROI | 530% |
 
+## Dynamic charts
+
+The **Dynamic charts** tab renders browser-native canvas charts without external dependencies:
+
+- **Cumulative cost**: current platform cost vs target platform cost including migration cost.
+- **Net savings**: savings after accounting for migration cost over the selected analysis period.
+
+Charts update automatically when any input changes.
+
 ## Formulas
 
 ```text
 Total cores = hosts × sockets per host × cores per socket
 Total sockets = hosts × sockets per host
-Current annual cost = total cores × current price/core/year
-Target annual cost = total sockets × target price/socket/year
+Absolute mode total cores = entered total cores
+Absolute mode total sockets = entered total sockets
+License annual cost = unit price × selected quantity, either total cores or total sockets
+Total annual cost = license annual cost + additional annual costs
 Annual savings = current annual cost - target annual cost
 Payback years = migration cost / annual savings
 Net savings = annual savings × years - migration cost
