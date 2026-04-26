@@ -12,7 +12,7 @@ VirtROI estimates:
 - target annual licensing cost
 - additional annual costs for each product
 - annual savings
-- migration payback period
+- payback period for one-time costs
 - net savings across an analysis period
 - ROI percentage
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
@@ -59,6 +59,16 @@ Use this for recurring costs that are not captured by the base license metric, f
 - management tooling
 - storage or replication licensing
 
+## One-time costs
+
+VirtROI includes a separate **One-time costs** box for non-recurring project costs:
+
+- migration services
+- hardware purchases or refreshes
+- bridge renewals / extensions
+
+These values are summed and used for payback, net savings, ROI, and cumulative cost charts.
+
 ## Default scenario
 
 The default values model this comparison:
@@ -77,7 +87,10 @@ The default values model this comparison:
 | Target unit price | $4,500 |
 | Current additional annual costs | $0 |
 | Target additional annual costs | $0 |
-| One-time migration cost | $40,000 |
+| Migration services | $40,000 |
+| Hardware purchases | $0 |
+| Renewals / extensions | $0 |
+| Total one-time costs | $40,000 |
 | Analysis period | 3 years |
 
 Default result:
@@ -90,15 +103,15 @@ Default result:
 | Target annual cost | $90,000 |
 | Annual savings | $102,000 |
 | Payback period | 0.39 years |
-| Net savings after migration, 3 years | $266,000 |
+| Net savings after one-time costs, 3 years | $266,000 |
 | ROI | 665% |
 
 ## Dynamic charts
 
 The **Dynamic charts** tab renders browser-native canvas charts without external dependencies:
 
-- **Cumulative cost**: current platform cost vs target platform cost including migration cost.
-- **Net savings**: savings after accounting for migration cost over the selected analysis period.
+- **Cumulative cost**: current platform cost vs target platform cost including one-time costs.
+- **Net savings**: savings after accounting for one-time costs over the selected analysis period.
 
 Charts update automatically when any input changes.
 
@@ -112,9 +125,10 @@ Absolute mode total sockets = entered total sockets
 License annual cost = unit price × selected quantity, either total cores or total sockets
 Total annual cost = license annual cost + additional annual costs
 Annual savings = current annual cost - target annual cost
-Payback years = migration cost / annual savings
-Net savings = annual savings × years - migration cost
-ROI % = net savings / migration cost × 100
+One-time costs = migration services + hardware purchases + renewals/extensions
+Payback years = one-time costs / annual savings
+Net savings = annual savings × years - one-time costs
+ROI % = net savings / one-time costs × 100
 ```
 
 If annual savings are zero or negative, VirtROI reports `No payback` instead of a misleading payback period.

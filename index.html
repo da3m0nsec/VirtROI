@@ -143,10 +143,27 @@
               </div>
             </fieldset>
 
-            <label>
-              <span>One-time migration cost</span>
-              <input id="migrationCost" type="number" value="40000" min="0" step="100" inputmode="decimal" />
-            </label>
+            <fieldset class="field-group wide one-time-costs">
+              <legend>One-time costs</legend>
+              <p class="field-note">Capture non-recurring costs needed to execute or defer the switch.</p>
+              <div class="input-grid compact">
+                <label>
+                  <span>Migration services</span>
+                  <input id="migrationCost" type="number" value="40000" min="0" step="100" inputmode="decimal" />
+                </label>
+
+                <label>
+                  <span>Hardware purchases</span>
+                  <input id="hardwareCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
+                </label>
+
+                <label>
+                  <span>Renewals / extensions</span>
+                  <input id="renewalCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
+                  <small>Example: bridge renewals, hardware refresh, temporary support.</small>
+                </label>
+              </div>
+            </fieldset>
 
             <label>
               <span>Analysis period, years</span>
@@ -181,12 +198,18 @@
             </article>
 
             <article class="metric-card">
+              <span class="metric-label">One-time costs</span>
+              <strong id="oneTimeCosts">$40,000</strong>
+              <small>Migration <span id="migrationCostDisplay">$40,000</span> + hardware <span id="hardwareCostDisplay">$0</span> + renewals <span id="renewalCostDisplay">$0</span></small>
+            </article>
+
+            <article class="metric-card">
               <span class="metric-label">Payback period</span>
               <strong id="paybackYears">0.39 years</strong>
             </article>
 
             <article class="metric-card">
-              <span class="metric-label">Net savings after migration</span>
+              <span class="metric-label">Net savings after one-time costs</span>
               <strong id="netSavingsAfterMigration">$266,000</strong>
               <small>Over <span id="analysisPeriodLabel">3 years</span></small>
             </article>
@@ -210,26 +233,26 @@
         <div class="section-heading">
           <p class="eyebrow">Dynamic charts</p>
           <h2 id="charts-title">Visualize the business case over time</h2>
-          <p>Charts update instantly as you change pricing unit, capacity, add-on costs, migration cost, or analysis period.</p>
+          <p>Charts update instantly as you change pricing unit, capacity, add-on costs, one-time costs, or analysis period.</p>
         </div>
 
         <div class="chart-grid">
           <article class="chart-card">
             <div class="chart-heading">
               <h3>Cumulative cost</h3>
-              <p>Current platform vs target platform including migration cost.</p>
+              <p>Current platform vs target platform including one-time costs.</p>
             </div>
             <canvas id="costChart" aria-label="Cumulative cost chart" role="img"></canvas>
             <div class="legend">
               <span><i class="legend-current"></i> Current</span>
-              <span><i class="legend-target"></i> Target + migration</span>
+              <span><i class="legend-target"></i> Target + one-time costs</span>
             </div>
           </article>
 
           <article class="chart-card">
             <div class="chart-heading">
               <h3>Net savings</h3>
-              <p>Positive values mean the target platform has recovered migration cost and is saving money.</p>
+              <p>Positive values mean the target platform has recovered one-time costs and is saving money.</p>
             </div>
             <canvas id="savingsChart" aria-label="Net savings chart" role="img"></canvas>
             <div class="legend">
@@ -251,9 +274,9 @@
         <div><dt>License annual cost</dt><dd>unit price × selected metric quantity: cores or sockets</dd></div>
         <div><dt>Total annual cost</dt><dd>license annual cost + additional annual costs</dd></div>
         <div><dt>Annual savings</dt><dd>current annual cost − target annual cost</dd></div>
-        <div><dt>Payback years</dt><dd>migration cost ÷ annual savings</dd></div>
-        <div><dt>Net savings</dt><dd>annual savings × years − migration cost</dd></div>
-        <div><dt>ROI %</dt><dd>net savings ÷ migration cost × 100</dd></div>
+        <div><dt>Payback years</dt><dd>one-time costs ÷ annual savings</dd></div>
+        <div><dt>Net savings</dt><dd>annual savings × years − one-time costs</dd></div>
+        <div><dt>ROI %</dt><dd>net savings ÷ one-time costs × 100</dd></div>
       </dl>
     </section>
   </main>

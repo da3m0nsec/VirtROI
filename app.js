@@ -14,6 +14,8 @@ const DEFAULT_INPUTS = {
   currentAdditionalAnnualCost: 0,
   targetAdditionalAnnualCost: 0,
   migrationCost: 40000,
+  hardwareCost: 0,
+  renewalCost: 0,
   years: 3,
 };
 
@@ -59,6 +61,9 @@ function calculateRoi(inputs) {
   const currentAdditionalAnnualCost = toFiniteNumber(inputs.currentAdditionalAnnualCost);
   const targetAdditionalAnnualCost = toFiniteNumber(inputs.targetAdditionalAnnualCost);
   const migrationCost = toFiniteNumber(inputs.migrationCost);
+  const hardwareCost = toFiniteNumber(inputs.hardwareCost);
+  const renewalCost = toFiniteNumber(inputs.renewalCost);
+  const oneTimeCosts = migrationCost + hardwareCost + renewalCost;
   const years = toFiniteNumber(inputs.years, DEFAULT_INPUTS.years);
 
   const currentLicenseAnnualCost = calculateLicenseCost(currentPricingMetric, currentUnitPricePerYear, totalSockets, totalCores);
@@ -67,9 +72,9 @@ function calculateRoi(inputs) {
   const targetAnnualCost = targetLicenseAnnualCost + targetAdditionalAnnualCost;
   const annualSavings = currentAnnualCost - targetAnnualCost;
   const totalSavingsOverPeriod = annualSavings * years;
-  const netSavingsAfterMigration = totalSavingsOverPeriod - migrationCost;
-  const paybackYears = annualSavings > 0 ? migrationCost / annualSavings : null;
-  const roiPercent = migrationCost > 0 ? roundTo((netSavingsAfterMigration / migrationCost) * 100, 2) : null;
+  const netSavingsAfterMigration = totalSavingsOverPeriod - oneTimeCosts;
+  const paybackYears = annualSavings > 0 ? oneTimeCosts / annualSavings : null;
+  const roiPercent = oneTimeCosts > 0 ? roundTo((netSavingsAfterMigration / oneTimeCosts) * 100, 2) : null;
 
   const result = {
     totalCores,
@@ -78,6 +83,7 @@ function calculateRoi(inputs) {
     targetLicenseAnnualCost,
     currentAnnualCost,
     targetAnnualCost,
+    oneTimeCosts,
     annualSavings,
     totalSavingsOverPeriod,
     netSavingsAfterMigration,
@@ -86,7 +92,7 @@ function calculateRoi(inputs) {
   };
 
   Object.defineProperty(result, 'migrationCost', {
-    value: migrationCost,
+    value: oneTimeCosts,
     enumerable: false,
   });
 
@@ -116,7 +122,7 @@ function getDecision(result) {
     return {
       label: 'Strong case',
       tone: 'strong',
-      summary: 'The financial case is strong: annual savings recover migration costs in about a year or less.',
+      summary: 'The financial case is strong: annual savings recover one-time costs in about a year or less.',
     };
   }
 
@@ -131,7 +137,7 @@ function getDecision(result) {
   return {
     label: 'Weak financial case',
     tone: 'weak',
-    summary: 'Savings are too low, negative, or take too long to recover the migration investment.',
+    summary: 'Savings are too low, negative, or take too long to recover the one-time investment.',
   };
 }
 
@@ -194,6 +200,8 @@ function getInputs() {
     currentAdditionalAnnualCost: toFiniteNumber(getValue('currentAdditionalAnnualCost', DEFAULT_INPUTS.currentAdditionalAnnualCost)),
     targetAdditionalAnnualCost: toFiniteNumber(getValue('targetAdditionalAnnualCost', DEFAULT_INPUTS.targetAdditionalAnnualCost)),
     migrationCost: toFiniteNumber(getValue('migrationCost', DEFAULT_INPUTS.migrationCost)),
+    hardwareCost: toFiniteNumber(getValue('hardwareCost', DEFAULT_INPUTS.hardwareCost)),
+    renewalCost: toFiniteNumber(getValue('renewalCost', DEFAULT_INPUTS.renewalCost)),
     years: toFiniteNumber(getValue('years', DEFAULT_INPUTS.years), DEFAULT_INPUTS.years),
   };
 }
@@ -223,6 +231,10 @@ function renderResults(result, inputs) {
   setText('targetLicenseAnnualCost', formatCurrency(result.targetLicenseAnnualCost));
   setText('currentAdditionalCostDisplay', formatCurrency(inputs.currentAdditionalAnnualCost));
   setText('targetAdditionalCostDisplay', formatCurrency(inputs.targetAdditionalAnnualCost));
+  setText('migrationCostDisplay', formatCurrency(inputs.migrationCost));
+  setText('hardwareCostDisplay', formatCurrency(inputs.hardwareCost));
+  setText('renewalCostDisplay', formatCurrency(inputs.renewalCost));
+  setText('oneTimeCosts', formatCurrency(result.oneTimeCosts));
   setText('annualSavings', formatCurrency(result.annualSavings));
   setText('paybackYears', formatYears(result.paybackYears));
   setText('netSavingsAfterMigration', formatCurrency(result.netSavingsAfterMigration));
@@ -305,7 +317,7 @@ function drawChart(canvas, series, keys, colors, formatter) {
 }
 
 function renderCharts(result, inputs) {
-  const series = buildChartSeries({ ...result, migrationCost: inputs.migrationCost }, inputs.years);
+  const series = buildChartSeries(result, inputs.years);
   drawChart(
     getElement('costChart'),
     series,

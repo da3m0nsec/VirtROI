@@ -33,6 +33,7 @@ test('calculateRoi computes the default Product 1 to Product 2 scenario', () => 
     targetLicenseAnnualCost: 90000,
     currentAnnualCost: 192000,
     targetAnnualCost: 90000,
+    oneTimeCosts: 40000,
     annualSavings: 102000,
     totalSavingsOverPeriod: 306000,
     netSavingsAfterMigration: 266000,
@@ -88,6 +89,30 @@ test('calculateRoi supports absolute cores and sockets instead of host topology'
   assert.equal(result.targetLicenseAnnualCost, 19200);
   assert.equal(result.targetAnnualCost, 25200);
   assert.equal(result.annualSavings, 51600);
+});
+
+test('calculateRoi combines migration, hardware, and renewal one-time costs', () => {
+  const result = calculateRoi({
+    inputMode: 'topology',
+    hosts: 2,
+    socketsPerHost: 2,
+    coresPerSocket: 10,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 500,
+    targetUnitPricePerYear: 1000,
+    currentAdditionalAnnualCost: 0,
+    targetAdditionalAnnualCost: 0,
+    migrationCost: 10000,
+    hardwareCost: 15000,
+    renewalCost: 5000,
+    years: 2,
+  });
+
+  assert.equal(result.oneTimeCosts, 30000);
+  assert.equal(result.netSavingsAfterMigration, 2000);
+  assert.equal(result.paybackYears, 1.875);
+  assert.equal(result.roiPercent, 6.67);
 });
 
 test('calculateRoi does not produce a payback period when annual savings are not positive', () => {
