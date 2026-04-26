@@ -20,7 +20,7 @@
       <p class="eyebrow">Virtualization cost strategy</p>
       <h1>Calculate whether changing your virtualization stack is financially worth it.</h1>
       <p class="hero-copy">
-        Compare products priced by core or by socket, include add-on costs such as vSAN capacity,
+        Compare products priced by core or by socket, include add-on costs such as HCI capacity,
         and visualize cumulative cost, savings, payback, and ROI over time.
       </p>
     </section>
@@ -38,18 +38,18 @@
           <div class="section-heading">
             <p class="eyebrow">Scenario inputs</p>
             <h2 id="calculator-title">Build your comparison</h2>
-            <p>Default values model a VMware renewal at $200/core/year vs Morpheus VM Essentials at $600/socket/year.</p>
+            <p>Default values model a Virtualization Product 1 renewal at $400/core/year vs Virtualization Product 2 at $4,500/socket/year.</p>
           </div>
 
           <form class="input-grid" aria-label="Virtualization ROI inputs">
             <label class="wide">
               <span>Current platform</span>
-              <input id="currentPlatform" type="text" value="VMware" autocomplete="off" />
+              <input id="currentPlatform" type="text" value="Virtualization Product 1" autocomplete="off" />
             </label>
 
             <label class="wide">
               <span>Target platform</span>
-              <input id="targetPlatform" type="text" value="Morpheus VM Essentials" autocomplete="off" />
+              <input id="targetPlatform" type="text" value="Virtualization Product 2" autocomplete="off" />
             </label>
 
             <label class="wide">
@@ -108,13 +108,13 @@
 
                 <label>
                   <span>Unit price / year</span>
-                  <input id="currentUnitPricePerYear" type="number" value="200" min="0" step="1" inputmode="decimal" />
+                  <input id="currentUnitPricePerYear" type="number" value="400" min="0" step="1" inputmode="decimal" />
                 </label>
 
                 <label>
                   <span>Additional annual costs</span>
                   <input id="currentAdditionalAnnualCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
-                  <small>Example: vSAN TBs, support uplift, add-ons.</small>
+                  <small>Example: HCI TBs, support uplift, add-ons.</small>
                 </label>
               </div>
             </fieldset>
@@ -132,13 +132,13 @@
 
                 <label>
                   <span>Unit price / year</span>
-                  <input id="targetUnitPricePerYear" type="number" value="600" min="0" step="1" inputmode="decimal" />
+                  <input id="targetUnitPricePerYear" type="number" value="4500" min="0" step="1" inputmode="decimal" />
                 </label>
 
                 <label>
                   <span>Additional annual costs</span>
                   <input id="targetAdditionalAnnualCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
-                  <small>Example: vSAN TBs, backup, support, storage add-ons.</small>
+                  <small>Example: HCI TBs, backup, support, storage add-ons.</small>
                 </label>
               </div>
             </fieldset>
@@ -164,36 +164,36 @@
 
           <div class="result-grid">
             <article class="metric-card">
-              <span class="metric-label"><span id="currentPlatformLabel">VMware</span> annual cost</span>
-              <strong id="currentAnnualCost">$96,000</strong>
-              <small>License <span id="currentLicenseAnnualCost">$96,000</span> + add-ons <span id="currentAdditionalCostDisplay">$0</span></small>
+              <span class="metric-label"><span id="currentPlatformLabel">Virtualization Product 1</span> annual cost</span>
+              <strong id="currentAnnualCost">$192,000</strong>
+              <small>License <span id="currentLicenseAnnualCost">$192,000</span> + add-ons <span id="currentAdditionalCostDisplay">$0</span></small>
             </article>
 
             <article class="metric-card">
-              <span class="metric-label"><span id="targetPlatformLabel">Morpheus VM Essentials</span> annual cost</span>
-              <strong id="targetAnnualCost">$12,000</strong>
-              <small>License <span id="targetLicenseAnnualCost">$12,000</span> + add-ons <span id="targetAdditionalCostDisplay">$0</span></small>
+              <span class="metric-label"><span id="targetPlatformLabel">Virtualization Product 2</span> annual cost</span>
+              <strong id="targetAnnualCost">$90,000</strong>
+              <small>License <span id="targetLicenseAnnualCost">$90,000</span> + add-ons <span id="targetAdditionalCostDisplay">$0</span></small>
             </article>
 
             <article class="metric-card highlight">
               <span class="metric-label">Annual savings</span>
-              <strong id="annualSavings">$84,000</strong>
+              <strong id="annualSavings">$102,000</strong>
             </article>
 
             <article class="metric-card">
               <span class="metric-label">Payback period</span>
-              <strong id="paybackYears">0.48 years</strong>
+              <strong id="paybackYears">0.39 years</strong>
             </article>
 
             <article class="metric-card">
               <span class="metric-label">Net savings after migration</span>
-              <strong id="netSavingsAfterMigration">$212,000</strong>
+              <strong id="netSavingsAfterMigration">$266,000</strong>
               <small>Over <span id="analysisPeriodLabel">3 years</span></small>
             </article>
 
             <article class="metric-card">
               <span class="metric-label">ROI</span>
-              <strong id="roiPercent">530%</strong>
+              <strong id="roiPercent">665%</strong>
             </article>
           </div>
 

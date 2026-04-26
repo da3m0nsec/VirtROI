@@ -2,7 +2,7 @@
 
 VirtROI is a static web calculator that helps infrastructure and platform teams estimate whether changing virtualization licensing models is financially worth it.
 
-It supports products priced per core/year or per socket/year, lets you enter capacity either as topology or absolute totals, and includes extra annual costs such as vSAN TBs, backup, support, or other add-ons.
+It supports products priced per core/year or per socket/year, lets you enter capacity either as topology or absolute totals, and includes extra annual costs such as HCI TBs, backup, support, or other add-ons.
 
 ## What it calculates
 
@@ -53,7 +53,7 @@ Both current and target products include an **Additional annual costs** field.
 
 Use this for recurring costs that are not captured by the base license metric, for example:
 
-- vSAN TB capacity
+- HCI TB capacity
 - backup add-ons
 - support uplift
 - management tooling
@@ -65,16 +65,16 @@ The default values model this comparison:
 
 | Input | Default |
 | --- | ---: |
-| Current platform | VMware |
-| Target platform | Morpheus VM Essentials |
+| Current platform | Virtualization Product 1 |
+| Target platform | Virtualization Product 2 |
 | Capacity mode | Hosts × sockets × cores |
 | Hosts | 10 |
 | Sockets per host | 2 |
 | Cores per socket | 24 |
 | Current pricing unit | Per core / year |
-| Current unit price | $200 |
+| Current unit price | $400 |
 | Target pricing unit | Per socket / year |
-| Target unit price | $600 |
+| Target unit price | $4,500 |
 | Current additional annual costs | $0 |
 | Target additional annual costs | $0 |
 | One-time migration cost | $40,000 |
@@ -86,12 +86,12 @@ Default result:
 | --- | ---: |
 | Total cores | 480 |
 | Total sockets | 20 |
-| Current annual cost | $96,000 |
-| Target annual cost | $12,000 |
-| Annual savings | $84,000 |
-| Payback period | 0.48 years |
-| Net savings after migration, 3 years | $212,000 |
-| ROI | 530% |
+| Current annual cost | $192,000 |
+| Target annual cost | $90,000 |
+| Annual savings | $102,000 |
+| Payback period | 0.39 years |
+| Net savings after migration, 3 years | $266,000 |
+| ROI | 665% |
 
 ## Dynamic charts
 

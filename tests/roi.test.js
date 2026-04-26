@@ -10,7 +10,7 @@ const {
   formatPercent,
 } = require('../app.js');
 
-test('calculateRoi computes the default VMware to Morpheus scenario', () => {
+test('calculateRoi computes the default Product 1 to Product 2 scenario', () => {
   const result = calculateRoi({
     inputMode: 'topology',
     hosts: 10,
@@ -18,8 +18,8 @@ test('calculateRoi computes the default VMware to Morpheus scenario', () => {
     coresPerSocket: 24,
     currentPricingMetric: 'core',
     targetPricingMetric: 'socket',
-    currentUnitPricePerYear: 200,
-    targetUnitPricePerYear: 600,
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
     currentAdditionalAnnualCost: 0,
     targetAdditionalAnnualCost: 0,
     migrationCost: 40000,
@@ -29,15 +29,15 @@ test('calculateRoi computes the default VMware to Morpheus scenario', () => {
   assert.deepEqual(result, {
     totalCores: 480,
     totalSockets: 20,
-    currentLicenseAnnualCost: 96000,
-    targetLicenseAnnualCost: 12000,
-    currentAnnualCost: 96000,
-    targetAnnualCost: 12000,
-    annualSavings: 84000,
-    totalSavingsOverPeriod: 252000,
-    netSavingsAfterMigration: 212000,
-    paybackYears: 0.47619047619047616,
-    roiPercent: 530,
+    currentLicenseAnnualCost: 192000,
+    targetLicenseAnnualCost: 90000,
+    currentAnnualCost: 192000,
+    targetAnnualCost: 90000,
+    annualSavings: 102000,
+    totalSavingsOverPeriod: 306000,
+    netSavingsAfterMigration: 266000,
+    paybackYears: 0.39215686274509803,
+    roiPercent: 665,
   });
 });
 
@@ -119,8 +119,8 @@ test('buildChartSeries produces cumulative cost and savings points per year', ()
     coresPerSocket: 24,
     currentPricingMetric: 'core',
     targetPricingMetric: 'socket',
-    currentUnitPricePerYear: 200,
-    targetUnitPricePerYear: 600,
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
     currentAdditionalAnnualCost: 0,
     targetAdditionalAnnualCost: 0,
     migrationCost: 40000,
@@ -129,9 +129,9 @@ test('buildChartSeries produces cumulative cost and savings points per year', ()
 
   assert.deepEqual(buildChartSeries(result, 3), [
     { year: 0, currentCost: 0, targetCost: 40000, netSavings: -40000 },
-    { year: 1, currentCost: 96000, targetCost: 52000, netSavings: 44000 },
-    { year: 2, currentCost: 192000, targetCost: 64000, netSavings: 128000 },
-    { year: 3, currentCost: 288000, targetCost: 76000, netSavings: 212000 },
+    { year: 1, currentCost: 192000, targetCost: 130000, netSavings: 62000 },
+    { year: 2, currentCost: 384000, targetCost: 220000, netSavings: 164000 },
+    { year: 3, currentCost: 576000, targetCost: 310000, netSavings: 266000 },
   ]);
 });
 

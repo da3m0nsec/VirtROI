@@ -16,11 +16,11 @@ VirtROI compares virtualization platform renewal/licensing scenarios.
 
 Example target user story:
 
-> I currently use VMware and my renewal will cost `$200/core/year`. I am evaluating Morpheus VM Essentials at `$600/socket/year`. I want to enter hosts, sockets, cores, license prices, migration cost, and time horizon to see annual savings, payback period, and multi-year ROI.
+> I currently use Virtualization Product 1 and my renewal will cost `$400/core/year`. I am evaluating Virtualization Product 2 at `$4,500/socket/year`. I want to enter hosts, sockets, cores, license prices, migration cost, and time horizon to see annual savings, payback period, and multi-year ROI.
 
 ## Core Product Principles
 
-1. **Default values must teach the app.** A first-time visitor should understand the VMware-to-Morpheus example immediately.
+1. **Default values must teach the app.** A first-time visitor should understand the Virtualization Product 1-to-Virtualization Product 2 example immediately.
 2. **Numbers must be explainable.** Every result should map to a simple formula visible in the UI or README.
 3. **Static-first.** No backend, no database, no private data collection.
 4. **Trust over complexity.** Clear assumptions, transparent formulas, conservative defaults.
@@ -83,11 +83,11 @@ calculateRoi({
 
 **Initial test case:**
 - `10 hosts * 2 sockets * 24 cores = 480 cores`
-- Current: `480 * $200 = $96,000/year`
-- Target: `20 * $600 = $12,000/year`
-- Annual savings: `$84,000/year`
+- Current: `480 * $400 = $192,000/year`
+- Target: `20 * $4,500 = $90,000/year`
+- Annual savings: `$102,000/year`
 - Migration cost: `$40,000`
-- Payback: `0.48 years`
+- Payback: `0.39 years`
 
 **Acceptance criteria:**
 - Test verifies all calculated fields above.
@@ -120,8 +120,8 @@ calculateRoi({
 - Modify: `style.css`
 
 **Fields:**
-- Current platform name, default `VMware`
-- Target platform name, default `Morpheus VM Essentials`
+- Current platform name, default `Virtualization Product 1`
+- Target platform name, default `Virtualization Product 2`
 - Hosts, default `10`
 - Sockets per host, default `2`
 - Cores per socket, default `24`
@@ -225,8 +225,8 @@ ROI % = net savings / migration cost × 100
 **Objective:** Help users start faster with common virtualization comparisons.
 
 **Initial presets:**
-- VMware renewal → Morpheus VM Essentials
-- VMware renewal → generic per-socket alternative
+- Virtualization Product 1 renewal → Virtualization Product 2
+- Virtualization Product 1 renewal → generic per-socket alternative
 - Custom blank scenario
 
 **Acceptance criteria:**
