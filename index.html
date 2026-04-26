@@ -3,24 +3,153 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VirtROI</title>
+  <meta name="description" content="VirtROI helps compare virtualization licensing models and estimate annual savings, payback, and ROI." />
+  <title>VirtROI | Virtualization ROI Calculator</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="container">
-    <h1>VirtROI</h1>
+  <header class="hero">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="VirtROI home">VirtROI</a>
+      <a href="#calculator">Calculator</a>
+      <a href="#formulas">Formulas</a>
+    </nav>
 
-    <h2>Inputs</h2>
-    Hosts <input id="hosts" type="number" value="10"><br>
-    Sockets <input id="socketsPerHost" type="number" value="2"><br>
-    Cores <input id="coresPerSocket" type="number" value="24"><br>
-    $/core <input id="currentPricePerCore" type="number" value="200"><br>
-    $/socket <input id="targetPricePerSocket" type="number" value="600"><br>
-    Migration cost <input id="migrationCost" type="number" value="40000"><br>
+    <section id="top" class="hero-content">
+      <p class="eyebrow">Virtualization cost strategy</p>
+      <h1>Calculate whether changing your virtualization stack is financially worth it.</h1>
+      <p class="hero-copy">
+        Compare a current per-core renewal, such as VMware, against a target per-socket alternative,
+        such as Morpheus VM Essentials. Estimate annual savings, payback, and multi-year ROI in seconds.
+      </p>
+    </section>
+  </header>
 
-    <h2>Results</h2>
-    <p id="result"></p>
+  <main>
+    <section id="calculator" class="calculator-shell" aria-labelledby="calculator-title">
+      <div class="panel input-panel">
+        <div class="section-heading">
+          <p class="eyebrow">Scenario inputs</p>
+          <h2 id="calculator-title">Build your comparison</h2>
+          <p>Default values model a VMware renewal at $200/core/year vs Morpheus VM Essentials at $600/socket/year.</p>
+        </div>
+
+        <form class="input-grid" aria-label="Virtualization ROI inputs">
+          <label>
+            <span>Current platform</span>
+            <input id="currentPlatform" type="text" value="VMware" autocomplete="off" />
+          </label>
+
+          <label>
+            <span>Target platform</span>
+            <input id="targetPlatform" type="text" value="Morpheus VM Essentials" autocomplete="off" />
+          </label>
+
+          <label>
+            <span>Hosts</span>
+            <input id="hosts" type="number" value="10" min="0" step="1" inputmode="decimal" />
+          </label>
+
+          <label>
+            <span>Sockets per host</span>
+            <input id="socketsPerHost" type="number" value="2" min="0" step="1" inputmode="decimal" />
+          </label>
+
+          <label>
+            <span>Cores per socket</span>
+            <input id="coresPerSocket" type="number" value="24" min="0" step="1" inputmode="decimal" />
+          </label>
+
+          <label>
+            <span>Current price / core / year</span>
+            <input id="currentPricePerCorePerYear" type="number" value="200" min="0" step="1" inputmode="decimal" />
+          </label>
+
+          <label>
+            <span>Target price / socket / year</span>
+            <input id="targetPricePerSocketPerYear" type="number" value="600" min="0" step="1" inputmode="decimal" />
+          </label>
+
+          <label>
+            <span>One-time migration cost</span>
+            <input id="migrationCost" type="number" value="40000" min="0" step="100" inputmode="decimal" />
+          </label>
+
+          <label>
+            <span>Analysis period, years</span>
+            <input id="years" type="number" value="3" min="1" step="1" inputmode="decimal" />
+          </label>
+        </form>
+      </div>
+
+      <div class="panel results-panel" aria-live="polite">
+        <div id="decisionCard" class="decision-card strong">
+          <p class="eyebrow">Decision signal</p>
+          <h2 id="decisionLabel">Strong case</h2>
+          <p id="decisionSummary">The financial case is strong.</p>
+        </div>
+
+        <div class="result-grid">
+          <article class="metric-card">
+            <span class="metric-label"><span id="currentPlatformLabel">VMware</span> annual cost</span>
+            <strong id="currentAnnualCost">$96,000</strong>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-label"><span id="targetPlatformLabel">Morpheus VM Essentials</span> annual cost</span>
+            <strong id="targetAnnualCost">$12,000</strong>
+          </article>
+
+          <article class="metric-card highlight">
+            <span class="metric-label">Annual savings</span>
+            <strong id="annualSavings">$84,000</strong>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-label">Payback period</span>
+            <strong id="paybackYears">0.48 years</strong>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-label">Net savings after migration</span>
+            <strong id="netSavingsAfterMigration">$212,000</strong>
+            <small>Over <span id="analysisPeriodLabel">3 years</span></small>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-label">ROI</span>
+            <strong id="roiPercent">530%</strong>
+          </article>
+        </div>
+
+        <div class="capacity-strip" aria-label="Infrastructure capacity summary">
+          <span><strong id="totalCores">480</strong> total cores</span>
+          <span><strong id="totalSockets">20</strong> total sockets</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="formulas" class="panel formulas" aria-labelledby="formulas-title">
+      <div class="section-heading">
+        <p class="eyebrow">Transparent assumptions</p>
+        <h2 id="formulas-title">Formulas used by VirtROI</h2>
+      </div>
+      <dl class="formula-grid">
+        <div><dt>Total cores</dt><dd>hosts × sockets per host × cores per socket</dd></div>
+        <div><dt>Total sockets</dt><dd>hosts × sockets per host</dd></div>
+        <div><dt>Current annual cost</dt><dd>total cores × current price/core/year</dd></div>
+        <div><dt>Target annual cost</dt><dd>total sockets × target price/socket/year</dd></div>
+        <div><dt>Annual savings</dt><dd>current annual cost − target annual cost</dd></div>
+        <div><dt>Payback years</dt><dd>migration cost ÷ annual savings</dd></div>
+        <div><dt>Net savings</dt><dd>annual savings × years − migration cost</dd></div>
+        <div><dt>ROI %</dt><dd>net savings ÷ migration cost × 100</dd></div>
+      </dl>
+    </section>
   </main>
+
+  <footer class="footer">
+    <p>VirtROI is a static calculator. No scenario data is sent to a server.</p>
+  </footer>
 
   <script src="app.js"></script>
 </body>
