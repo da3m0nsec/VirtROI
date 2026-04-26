@@ -11,15 +11,17 @@
   <header class="hero">
     <nav class="nav" aria-label="Primary navigation">
       <a class="brand" href="#top" aria-label="VirtROI home">VirtROI</a>
-      <a href="#calculator">Calculator</a>
-      <a href="#charts" data-tab-link="charts-panel">Charts</a>
-      <a href="#formulas">Formulas</a>
+      <a href="#calculator" data-i18n="nav.calculator">Calculator</a>
+      <a href="#charts" data-tab-link="charts-panel" data-i18n="nav.charts">Charts</a>
+      <a href="#formulas" data-i18n="nav.formulas">Formulas</a>
+      <a href="#report" data-tab-link="report-panel" data-i18n="nav.report">Report</a>
+      <label class="language-picker"><span data-i18n="language.label">Language</span><select id="languageSelect" aria-label="Language"></select></label>
     </nav>
 
     <section id="top" class="hero-content">
-      <p class="eyebrow">Virtualization cost strategy</p>
-      <h1>Calculate whether changing your virtualization stack is financially worth it.</h1>
-      <p class="hero-copy">
+      <p class="eyebrow" data-i18n="hero.eyebrow">Virtualization cost strategy</p>
+      <h1 data-i18n="hero.title">Calculate whether changing your virtualization stack is financially worth it.</h1>
+      <p class="hero-copy" data-i18n="hero.copy">
         Compare products priced by core or by socket, include add-on costs such as HCI capacity,
         and visualize cumulative cost, savings, payback, and ROI over time.
       </p>
@@ -28,8 +30,9 @@
 
   <main>
     <div class="tabs" role="tablist" aria-label="VirtROI views">
-      <button id="calculator-tab" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="calculator-panel" data-tab-target="calculator-panel">Calculator</button>
-      <button id="charts-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="charts-panel" data-tab-target="charts-panel">Dynamic charts</button>
+      <button id="calculator-tab" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="calculator-panel" data-tab-target="calculator-panel" data-i18n="tabs.calculator">Calculator</button>
+      <button id="charts-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="charts-panel" data-tab-target="charts-panel" data-i18n="tabs.charts">Dynamic charts</button>
+      <button id="report-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="report-panel" data-tab-target="report-panel" data-i18n="tabs.report">Report</button>
     </div>
 
     <section id="calculator-panel" role="tabpanel" aria-labelledby="calculator-tab" data-tab-panel="calculator-panel">
@@ -231,10 +234,12 @@
     <section id="charts-panel" class="chart-panel" role="tabpanel" aria-labelledby="charts-tab" data-tab-panel="charts-panel" hidden>
       <section id="charts" class="panel charts" aria-labelledby="charts-title">
         <div class="section-heading">
-          <p class="eyebrow">Dynamic charts</p>
-          <h2 id="charts-title">Visualize the business case over time</h2>
-          <p>Charts update instantly as you change pricing unit, capacity, add-on costs, one-time costs, or analysis period.</p>
+          <p class="eyebrow" data-i18n="charts.eyebrow">Dynamic charts</p>
+          <h2 id="charts-title" data-i18n="charts.title">Visualize the business case over time</h2>
+          <p data-i18n="charts.copy">Charts update instantly and extend the selected period with two extra projected scenario years.</p>
         </div>
+
+        <p class="projection-note" data-i18n="charts.projectionNote">Projection includes two extra scenario years beyond the selected analysis period.</p>
 
         <div class="chart-grid">
           <article class="chart-card">
@@ -259,6 +264,25 @@
               <span><i class="legend-savings"></i> Net savings</span>
             </div>
           </article>
+        </div>
+      </section>
+    </section>
+
+    <section id="report-panel" class="report-panel" role="tabpanel" aria-labelledby="report-tab" data-tab-panel="report-panel" hidden>
+      <section id="report" class="panel report" aria-labelledby="report-title">
+        <div class="section-heading report-heading">
+          <div>
+            <p class="eyebrow" data-i18n="report.eyebrow">Editable report</p>
+            <h2 id="report-title" data-i18n="report.title">Generate, edit, and export your business case</h2>
+            <p data-i18n="report.copy">Create an editable report with the current figures and chart snapshots, then export it to PDF using the browser print dialog.</p>
+          </div>
+          <div class="report-actions">
+            <button id="generateReport" class="primary-action" type="button" data-i18n="report.generate">Generate report</button>
+            <button id="exportPdf" class="secondary-action" type="button" data-i18n="report.exportPdf">Export PDF</button>
+          </div>
+        </div>
+        <div id="reportBody" class="report-editor" contenteditable="true" aria-label="Editable VirtROI report">
+          <p data-i18n="report.placeholder">Generate a report to populate this editable area.</p>
         </div>
       </section>
     </section>

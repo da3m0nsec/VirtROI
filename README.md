@@ -18,7 +18,9 @@ VirtROI estimates:
 - net savings across an analysis period
 - ROI percentage
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
-- dynamic charts for cumulative cost and net savings over time
+- dynamic charts for cumulative cost and net savings over time, including two extra projected scenario years
+- language options for English, Spanish, Portuguese, Italian, Japanese, and German
+- an editable report that can include chart snapshots and be exported to PDF with the browser print dialog
 
 ## Capacity input modes
 
@@ -115,7 +117,29 @@ The **Dynamic charts** tab renders browser-native canvas charts without external
 - **Cumulative cost**: current platform cost vs target platform cost including one-time costs.
 - **Net savings**: savings after accounting for one-time costs over the selected analysis period.
 
-Charts update automatically when any input changes.
+Charts update automatically when any input changes. The x-axis marks projected years with `*`, so a 3-year analysis also shows years 4 and 5 as forward-looking scenario points.
+
+## Editable PDF report
+
+The **Report** tab can generate a browser-side, editable business-case report from the current inputs and results. The generated report includes:
+
+- executive summary
+- key metrics
+- chart snapshots
+- a manual notes section for assumptions, risks, next steps, or stakeholder comments
+
+After editing the report in-place, use **Export PDF**. VirtROI opens the browser print dialog, where you can choose **Save as PDF**. No report data leaves the browser.
+
+## Language options
+
+VirtROI includes a language selector with:
+
+- English
+- Spanish
+- Portuguese
+- Italian
+- Japanese
+- German
 
 ## Formulas
 
