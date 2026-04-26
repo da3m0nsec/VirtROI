@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const {
   calculateRoi,
@@ -219,4 +221,36 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
   assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart']);
+});
+
+
+test('translations are stored as one locale file per supported language', () => {
+  const localeDir = path.join(__dirname, '..', 'locales');
+  const files = fs.readdirSync(localeDir).filter((file) => file.endsWith('.js')).sort();
+
+  assert.deepEqual(files, ['de.js', 'en.js', 'es.js', 'it.js', 'ja.js', 'pt.js']);
+  assert.equal(fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8').includes('const TRANSLATIONS = {'), false);
+});
+
+test('all locale files expose the same translation keys and cover every data-i18n key in the page', () => {
+  const localeDir = path.join(__dirname, '..', 'locales');
+  const locales = Object.fromEntries(
+    getLanguageOptions().map((option) => [option.code, require(path.join(localeDir, `${option.code}.js`))]),
+  );
+  const englishKeys = Object.keys(locales.en).sort();
+
+  for (const option of getLanguageOptions()) {
+    assert.deepEqual(Object.keys(locales[option.code]).sort(), englishKeys, `${option.code} locale keys differ from en`);
+    assert.equal(locales[option.code]['forms.currentPlatform'], translate(option.code, 'forms.currentPlatform'));
+  }
+
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const pageKeys = [
+    ...html.matchAll(/data-i18n(?:-html)?="([^"]+)"/g),
+    ...html.matchAll(/data-i18n-attr="[^"]*?:([^";]+)(?:;[^"]*?:([^";]+))*"/g),
+  ].flatMap((match) => match.slice(1).filter(Boolean));
+  const missing = pageKeys.filter((key) => !englishKeys.includes(key));
+  assert.deepEqual([...new Set(missing)], []);
+  assert.ok(pageKeys.includes('forms.currentPlatform'));
+  assert.ok(pageKeys.includes('formulas.roi.description'));
 });

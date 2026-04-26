@@ -9,8 +9,8 @@
 </head>
 <body>
   <header class="hero">
-    <nav class="nav" aria-label="Primary navigation">
-      <a class="brand" href="#top" aria-label="VirtROI home">VirtROI</a>
+    <nav class="nav" aria-label="Primary navigation" data-i18n-attr="aria-label:nav.aria">
+      <a class="brand" href="#top" aria-label="VirtROI home" data-i18n-attr="aria-label:brand.aria">VirtROI</a>
       <a href="#calculator" data-i18n="nav.calculator">Calculator</a>
       <a href="#charts" data-tab-link="charts-panel" data-i18n="nav.charts">Charts</a>
       <a href="#formulas" data-i18n="nav.formulas">Formulas</a>
@@ -29,7 +29,7 @@
   </header>
 
   <main>
-    <div class="tabs" role="tablist" aria-label="VirtROI views">
+    <div class="tabs" role="tablist" aria-label="VirtROI views" data-i18n-attr="aria-label:tabs.aria">
       <button id="calculator-tab" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="calculator-panel" data-tab-target="calculator-panel" data-i18n="tabs.calculator">Calculator</button>
       <button id="charts-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="charts-panel" data-tab-target="charts-panel" data-i18n="tabs.charts">Dynamic charts</button>
       <button id="report-tab" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="report-panel" data-tab-target="report-panel" data-i18n="tabs.report">Report</button>
@@ -39,137 +39,137 @@
       <section id="calculator" class="calculator-shell" aria-labelledby="calculator-title">
         <div class="panel input-panel">
           <div class="section-heading">
-            <p class="eyebrow">Scenario inputs</p>
-            <h2 id="calculator-title">Build your comparison</h2>
-            <p>Default values model a Virtualization Product 1 renewal at $400/core/year vs Virtualization Product 2 at $4,500/socket/year.</p>
+            <p class="eyebrow" data-i18n="calculator.eyebrow">Scenario inputs</p>
+            <h2 id="calculator-title" data-i18n="calculator.title">Build your comparison</h2>
+            <p data-i18n="calculator.copy">Default values model a Virtualization Product 1 renewal at $400/core/year vs Virtualization Product 2 at $4,500/socket/year.</p>
           </div>
 
-          <form class="input-grid" aria-label="Virtualization ROI inputs">
+          <form class="input-grid" aria-label="Virtualization ROI inputs" data-i18n-attr="aria-label:form.aria">
             <label class="wide">
-              <span>Current platform</span>
+              <span data-i18n="forms.currentPlatform">Current platform</span>
               <input id="currentPlatform" type="text" value="Virtualization Product 1" autocomplete="off" />
             </label>
 
             <label class="wide">
-              <span>Target platform</span>
+              <span data-i18n="forms.targetPlatform">Target platform</span>
               <input id="targetPlatform" type="text" value="Virtualization Product 2" autocomplete="off" />
             </label>
 
             <label class="wide">
-              <span>Capacity input mode</span>
+              <span data-i18n="forms.capacityMode">Capacity input mode</span>
               <select id="inputMode">
-                <option value="topology" selected>Hosts × sockets × cores</option>
-                <option value="absolute">Absolute sockets and cores</option>
+                <option value="topology" selected data-i18n="options.topology">Hosts × sockets × cores</option>
+                <option value="absolute" data-i18n="options.absolute">Absolute sockets and cores</option>
               </select>
             </label>
 
             <fieldset id="topologyFields" class="field-group wide">
-              <legend>Topology</legend>
+              <legend data-i18n="forms.topology">Topology</legend>
               <div class="input-grid compact">
                 <label>
-                  <span>Hosts</span>
+                  <span data-i18n="forms.hosts">Hosts</span>
                   <input id="hosts" type="number" value="10" min="0" step="1" inputmode="decimal" />
                 </label>
 
                 <label>
-                  <span>Sockets per host</span>
+                  <span data-i18n="forms.socketsPerHost">Sockets per host</span>
                   <input id="socketsPerHost" type="number" value="2" min="0" step="1" inputmode="decimal" />
                 </label>
 
                 <label>
-                  <span>Cores per socket</span>
+                  <span data-i18n="forms.coresPerSocket">Cores per socket</span>
                   <input id="coresPerSocket" type="number" value="24" min="0" step="1" inputmode="decimal" />
                 </label>
               </div>
             </fieldset>
 
             <fieldset id="absoluteFields" class="field-group wide" hidden>
-              <legend>Absolute capacity</legend>
+              <legend data-i18n="forms.absoluteCapacity">Absolute capacity</legend>
               <div class="input-grid compact">
                 <label>
-                  <span>Total sockets</span>
+                  <span data-i18n="forms.totalSockets">Total sockets</span>
                   <input id="absoluteSockets" type="number" value="20" min="0" step="1" inputmode="decimal" />
                 </label>
 
                 <label>
-                  <span>Total cores</span>
+                  <span data-i18n="forms.totalCores">Total cores</span>
                   <input id="absoluteCores" type="number" value="480" min="0" step="1" inputmode="decimal" />
                 </label>
               </div>
             </fieldset>
 
             <fieldset class="field-group wide">
-              <legend>Current product pricing</legend>
+              <legend data-i18n="forms.currentPricing">Current product pricing</legend>
               <div class="input-grid compact">
                 <label>
-                  <span>Pricing unit</span>
+                  <span data-i18n="forms.pricingUnit">Pricing unit</span>
                   <select id="currentPricingMetric">
-                    <option value="core" selected>Per core / year</option>
-                    <option value="socket">Per socket / year</option>
+                    <option value="core" selected data-i18n="options.coreYear">Per core / year</option>
+                    <option value="socket" data-i18n="options.socketYear">Per socket / year</option>
                   </select>
                 </label>
 
                 <label>
-                  <span>Unit price / year</span>
+                  <span data-i18n="forms.unitPriceYear">Unit price / year</span>
                   <input id="currentUnitPricePerYear" type="number" value="400" min="0" step="1" inputmode="decimal" />
                 </label>
 
                 <label>
-                  <span>Additional annual costs</span>
+                  <span data-i18n="forms.additionalAnnualCosts">Additional annual costs</span>
                   <input id="currentAdditionalAnnualCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
-                  <small>Example: HCI TBs, support uplift, add-ons.</small>
+                  <small data-i18n="forms.currentAddonsHelp">Example: HCI TBs, support uplift, add-ons.</small>
                 </label>
               </div>
             </fieldset>
 
             <fieldset class="field-group wide">
-              <legend>Target product pricing</legend>
+              <legend data-i18n="forms.targetPricing">Target product pricing</legend>
               <div class="input-grid compact">
                 <label>
-                  <span>Pricing unit</span>
+                  <span data-i18n="forms.pricingUnit">Pricing unit</span>
                   <select id="targetPricingMetric">
-                    <option value="core">Per core / year</option>
-                    <option value="socket" selected>Per socket / year</option>
+                    <option value="core" data-i18n="options.coreYear">Per core / year</option>
+                    <option value="socket" selected data-i18n="options.socketYear">Per socket / year</option>
                   </select>
                 </label>
 
                 <label>
-                  <span>Unit price / year</span>
+                  <span data-i18n="forms.unitPriceYear">Unit price / year</span>
                   <input id="targetUnitPricePerYear" type="number" value="4500" min="0" step="1" inputmode="decimal" />
                 </label>
 
                 <label>
-                  <span>Additional annual costs</span>
+                  <span data-i18n="forms.additionalAnnualCosts">Additional annual costs</span>
                   <input id="targetAdditionalAnnualCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
-                  <small>Example: HCI TBs, backup, support, storage add-ons.</small>
+                  <small data-i18n="forms.targetAddonsHelp">Example: HCI TBs, backup, support, storage add-ons.</small>
                 </label>
               </div>
             </fieldset>
 
             <fieldset class="field-group wide one-time-costs">
-              <legend>One-time costs</legend>
-              <p class="field-note">Capture non-recurring costs needed to execute or defer the switch.</p>
+              <legend data-i18n="forms.oneTimeCosts">One-time costs</legend>
+              <p class="field-note" data-i18n="forms.oneTimeCostsHelp">Capture non-recurring costs needed to execute or defer the switch.</p>
               <div class="input-grid compact">
                 <label>
-                  <span>Migration services</span>
+                  <span data-i18n="forms.migrationServices">Migration services</span>
                   <input id="migrationCost" type="number" value="40000" min="0" step="100" inputmode="decimal" />
                 </label>
 
                 <label>
-                  <span>Hardware purchases</span>
+                  <span data-i18n="forms.hardwarePurchases">Hardware purchases</span>
                   <input id="hardwareCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
                 </label>
 
                 <label>
-                  <span>Renewals / extensions</span>
+                  <span data-i18n="forms.renewalsExtensions">Renewals / extensions</span>
                   <input id="renewalCost" type="number" value="0" min="0" step="100" inputmode="decimal" />
-                  <small>Example: bridge renewals, hardware refresh, temporary support.</small>
+                  <small data-i18n="forms.renewalsHelp">Example: bridge renewals, hardware refresh, temporary support.</small>
                 </label>
               </div>
             </fieldset>
 
             <label>
-              <span>Analysis period, years</span>
+              <span data-i18n="forms.analysisPeriod">Analysis period, years</span>
               <input id="years" type="number" value="3" min="1" step="1" inputmode="decimal" />
             </label>
           </form>
@@ -177,55 +177,55 @@
 
         <div class="panel results-panel" aria-live="polite">
           <div id="decisionCard" class="decision-card strong">
-            <p class="eyebrow">Decision signal</p>
+            <p class="eyebrow" data-i18n="decision.eyebrow">Decision signal</p>
             <h2 id="decisionLabel">Strong case</h2>
             <p id="decisionSummary">The financial case is strong.</p>
           </div>
 
           <div class="result-grid">
             <article class="metric-card">
-              <span class="metric-label"><span id="currentPlatformLabel">Virtualization Product 1</span> annual cost</span>
+              <span class="metric-label" id="currentAnnualCostLabel"><span id="currentPlatformLabel">Virtualization Product 1</span> annual cost</span>
               <strong id="currentAnnualCost">$192,000</strong>
-              <small>License <span id="currentLicenseAnnualCost">$192,000</span> + add-ons <span id="currentAdditionalCostDisplay">$0</span></small>
+              <small id="currentAnnualCostBreakdown">License <span id="currentLicenseAnnualCost">$192,000</span> + add-ons <span id="currentAdditionalCostDisplay">$0</span></small>
             </article>
 
             <article class="metric-card">
-              <span class="metric-label"><span id="targetPlatformLabel">Virtualization Product 2</span> annual cost</span>
+              <span class="metric-label" id="targetAnnualCostLabel"><span id="targetPlatformLabel">Virtualization Product 2</span> annual cost</span>
               <strong id="targetAnnualCost">$90,000</strong>
-              <small>License <span id="targetLicenseAnnualCost">$90,000</span> + add-ons <span id="targetAdditionalCostDisplay">$0</span></small>
+              <small id="targetAnnualCostBreakdown">License <span id="targetLicenseAnnualCost">$90,000</span> + add-ons <span id="targetAdditionalCostDisplay">$0</span></small>
             </article>
 
             <article class="metric-card highlight">
-              <span class="metric-label">Annual savings</span>
+              <span class="metric-label" data-i18n="metrics.annualSavings">Annual savings</span>
               <strong id="annualSavings">$102,000</strong>
             </article>
 
             <article class="metric-card">
-              <span class="metric-label">One-time costs</span>
+              <span class="metric-label" data-i18n="metrics.oneTimeCosts">One-time costs</span>
               <strong id="oneTimeCosts">$40,000</strong>
-              <small>Migration <span id="migrationCostDisplay">$40,000</span> + hardware <span id="hardwareCostDisplay">$0</span> + renewals <span id="renewalCostDisplay">$0</span></small>
+              <small id="oneTimeCostsBreakdown">Migration <span id="migrationCostDisplay">$40,000</span> + hardware <span id="hardwareCostDisplay">$0</span> + renewals <span id="renewalCostDisplay">$0</span></small>
             </article>
 
             <article class="metric-card">
-              <span class="metric-label">Payback period</span>
+              <span class="metric-label" data-i18n="metrics.paybackPeriod">Payback period</span>
               <strong id="paybackYears">0.39 years</strong>
             </article>
 
             <article class="metric-card">
-              <span class="metric-label">Net savings after one-time costs</span>
+              <span class="metric-label" data-i18n="metrics.netSavingsAfterOneTime">Net savings after one-time costs</span>
               <strong id="netSavingsAfterMigration">$266,000</strong>
-              <small>Over <span id="analysisPeriodLabel">3 years</span></small>
+              <small id="analysisPeriodBreakdown">Over <span id="analysisPeriodLabel">3 years</span></small>
             </article>
 
             <article class="metric-card">
-              <span class="metric-label">ROI</span>
+              <span class="metric-label" data-i18n="metrics.roi">ROI</span>
               <strong id="roiPercent">665%</strong>
             </article>
           </div>
 
-          <div class="capacity-strip" aria-label="Infrastructure capacity summary">
-            <span><strong id="totalCores">480</strong> total cores</span>
-            <span><strong id="totalSockets">20</strong> total sockets</span>
+          <div class="capacity-strip" aria-label="Infrastructure capacity summary" data-i18n-attr="aria-label:capacity.aria">
+            <span><strong id="totalCores">480</strong> <span data-i18n="capacity.totalCores">total cores</span></span>
+            <span><strong id="totalSockets">20</strong> <span data-i18n="capacity.totalSockets">total sockets</span></span>
           </div>
         </div>
       </section>
@@ -244,24 +244,24 @@
         <div class="chart-grid">
           <article class="chart-card">
             <div class="chart-heading">
-              <h3>Cumulative cost</h3>
-              <p>Current platform vs target platform including one-time costs.</p>
+              <h3 data-i18n="charts.costTitle">Cumulative cost</h3>
+              <p data-i18n="charts.costDescription">Current platform vs target platform including one-time costs.</p>
             </div>
-            <canvas id="costChart" aria-label="Cumulative cost chart" role="img"></canvas>
+            <canvas id="costChart" aria-label="Cumulative cost chart" data-i18n-attr="aria-label:charts.costAria" role="img"></canvas>
             <div class="legend">
-              <span><i class="legend-current"></i> Current</span>
-              <span><i class="legend-target"></i> Target + one-time costs</span>
+              <span><i class="legend-current"></i> <span data-i18n="charts.legendCurrent">Current</span></span>
+              <span><i class="legend-target"></i> <span data-i18n="charts.legendTarget">Target + one-time costs</span></span>
             </div>
           </article>
 
           <article class="chart-card">
             <div class="chart-heading">
-              <h3>Net savings</h3>
-              <p>Positive values mean the target platform has recovered one-time costs and is saving money.</p>
+              <h3 data-i18n="charts.netSavingsTitle">Net savings</h3>
+              <p data-i18n="charts.netSavingsDescription">Positive values mean the target platform has recovered one-time costs and is saving money.</p>
             </div>
-            <canvas id="savingsChart" aria-label="Net savings chart" role="img"></canvas>
+            <canvas id="savingsChart" aria-label="Net savings chart" data-i18n-attr="aria-label:charts.savingsAria" role="img"></canvas>
             <div class="legend">
-              <span><i class="legend-savings"></i> Net savings</span>
+              <span><i class="legend-savings"></i> <span data-i18n="charts.legendSavings">Net savings</span></span>
             </div>
           </article>
         </div>
@@ -281,7 +281,7 @@
             <button id="exportPdf" class="secondary-action" type="button" data-i18n="report.exportPdf">Export PDF</button>
           </div>
         </div>
-        <div id="reportBody" class="report-editor" contenteditable="true" aria-label="Editable VirtROI report">
+        <div id="reportBody" class="report-editor" contenteditable="true" aria-label="Editable VirtROI report" data-i18n-attr="aria-label:report.editorAria">
           <p data-i18n="report.placeholder">Generate a report to populate this editable area.</p>
         </div>
       </section>
@@ -289,26 +289,32 @@
 
     <section id="formulas" class="panel formulas" aria-labelledby="formulas-title">
       <div class="section-heading">
-        <p class="eyebrow">Transparent assumptions</p>
-        <h2 id="formulas-title">Formulas used by VirtROI</h2>
+        <p class="eyebrow" data-i18n="formulas.eyebrow">Transparent assumptions</p>
+        <h2 id="formulas-title" data-i18n="formulas.title">Formulas used by VirtROI</h2>
       </div>
       <dl class="formula-grid">
-        <div><dt>Total cores</dt><dd>topology mode: hosts × sockets per host × cores per socket; absolute mode: total cores</dd></div>
-        <div><dt>Total sockets</dt><dd>topology mode: hosts × sockets per host; absolute mode: total sockets</dd></div>
-        <div><dt>License annual cost</dt><dd>unit price × selected metric quantity: cores or sockets</dd></div>
-        <div><dt>Total annual cost</dt><dd>license annual cost + additional annual costs</dd></div>
-        <div><dt>Annual savings</dt><dd>current annual cost − target annual cost</dd></div>
-        <div><dt>Payback years</dt><dd>one-time costs ÷ annual savings</dd></div>
-        <div><dt>Net savings</dt><dd>annual savings × years − one-time costs</dd></div>
-        <div><dt>ROI %</dt><dd>net savings ÷ one-time costs × 100</dd></div>
+        <div><dt data-i18n="formulas.totalCores.title">Total cores</dt><dd data-i18n="formulas.totalCores.description">topology mode: hosts × sockets per host × cores per socket; absolute mode: total cores</dd></div>
+        <div><dt data-i18n="formulas.totalSockets.title">Total sockets</dt><dd data-i18n="formulas.totalSockets.description">topology mode: hosts × sockets per host; absolute mode: total sockets</dd></div>
+        <div><dt data-i18n="formulas.licenseAnnualCost.title">License annual cost</dt><dd data-i18n="formulas.licenseAnnualCost.description">unit price × selected metric quantity: cores or sockets</dd></div>
+        <div><dt data-i18n="formulas.totalAnnualCost.title">Total annual cost</dt><dd data-i18n="formulas.totalAnnualCost.description">license annual cost + additional annual costs</dd></div>
+        <div><dt data-i18n="formulas.annualSavings.title">Annual savings</dt><dd data-i18n="formulas.annualSavings.description">current annual cost − target annual cost</dd></div>
+        <div><dt data-i18n="formulas.paybackYears.title">Payback years</dt><dd data-i18n="formulas.paybackYears.description">one-time costs ÷ annual savings</dd></div>
+        <div><dt data-i18n="formulas.netSavings.title">Net savings</dt><dd data-i18n="formulas.netSavings.description">annual savings × years − one-time costs</dd></div>
+        <div><dt data-i18n="formulas.roi.title">ROI %</dt><dd data-i18n="formulas.roi.description">net savings ÷ one-time costs × 100</dd></div>
       </dl>
     </section>
   </main>
 
   <footer class="footer">
-    <p>VirtROI is a static calculator. No scenario data is sent to a server.</p>
+    <p data-i18n="footer.privacy">VirtROI is a static calculator. No scenario data is sent to a server.</p>
   </footer>
 
+  <script src="locales/en.js"></script>
+  <script src="locales/es.js"></script>
+  <script src="locales/pt.js"></script>
+  <script src="locales/it.js"></script>
+  <script src="locales/ja.js"></script>
+  <script src="locales/de.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

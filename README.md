@@ -141,6 +141,19 @@ VirtROI includes a language selector with:
 - Japanese
 - German
 
+Translations live in separate files under `locales/`:
+
+```text
+locales/en.js
+locales/es.js
+locales/pt.js
+locales/it.js
+locales/ja.js
+locales/de.js
+```
+
+The test suite verifies that every locale exposes the same keys and that every `data-i18n` / translated attribute key used by the page exists in the locale files.
+
 ## Formulas
 
 ```text

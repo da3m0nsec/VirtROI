@@ -28,172 +28,33 @@ const LANGUAGE_OPTIONS = [
   { code: 'de', name: 'Deutsch' },
 ];
 
-const TRANSLATIONS = {
-  en: {
-    'nav.calculator': 'Calculator',
-    'nav.charts': 'Charts',
-    'nav.formulas': 'Formulas',
-    'nav.report': 'Report',
-    'language.label': 'Language',
-    'tabs.calculator': 'Calculator',
-    'tabs.charts': 'Dynamic charts',
-    'tabs.report': 'Report',
-    'hero.eyebrow': 'Virtualization cost strategy',
-    'hero.title': 'Calculate whether changing your virtualization stack is financially worth it.',
-    'hero.copy': 'Compare products priced by core or by socket, include add-on costs such as HCI capacity, and visualize cumulative cost, savings, payback, and ROI over time.',
-    'charts.eyebrow': 'Dynamic charts',
-    'charts.title': 'Visualize the business case over time',
-    'charts.copy': 'Charts update instantly and extend the selected period with two extra projected scenario years.',
-    'charts.projectionNote': 'Projection includes two extra scenario years beyond the selected analysis period.',
-    'report.eyebrow': 'Editable report',
-    'report.title': 'Generate, edit, and export your business case',
-    'report.copy': 'Create an editable report with the current figures and chart snapshots, then export it to PDF using the browser print dialog.',
-    'report.generate': 'Generate report',
-    'report.exportPdf': 'Export PDF',
-    'report.placeholder': 'Generate a report to populate this editable area.',
-    'report.generatedTitle': 'VirtROI report',
-    'report.summaryHeading': 'Executive summary',
-    'report.metricsHeading': 'Key metrics',
-    'report.chartsHeading': 'Charts',
-    'report.notesHeading': 'Manual notes',
-    'report.notesPlaceholder': 'Edit this section with risks, assumptions, next steps, or stakeholder comments.',
-    'decision.strong.label': 'Strong case',
-    'decision.evaluate.label': 'Worth evaluating',
-    'decision.weak.label': 'Weak financial case',
-  },
-  es: {
-    'nav.calculator': 'Calculadora',
-    'nav.charts': 'Gráficos',
-    'nav.formulas': 'Fórmulas',
-    'nav.report': 'Informe',
-    'language.label': 'Idioma',
-    'tabs.calculator': 'Calculadora',
-    'tabs.charts': 'Gráficos dinámicos',
-    'tabs.report': 'Informe',
-    'hero.eyebrow': 'Estrategia de costes de virtualización',
-    'hero.title': 'Calcula si cambiar tu stack de virtualización merece la pena financieramente.',
-    'hero.copy': 'Compara productos con precio por core o por socket, incluye costes adicionales como capacidad HCI y visualiza coste acumulado, ahorros, payback y ROI.',
-    'charts.eyebrow': 'Gráficos dinámicos',
-    'charts.title': 'Visualiza el business case en el tiempo',
-    'charts.copy': 'Los gráficos se actualizan al instante y añaden dos años proyectados al periodo seleccionado.',
-    'charts.projectionNote': 'La proyección incluye dos años adicionales de escenario más allá del periodo seleccionado.',
-    'report.eyebrow': 'Informe editable',
-    'report.title': 'Genera, edita y exporta tu business case',
-    'report.copy': 'Crea un informe editable con las cifras actuales e imágenes de los gráficos, y expórtalo a PDF desde el diálogo de impresión del navegador.',
-    'report.generate': 'Generar informe',
-    'report.exportPdf': 'Exportar PDF',
-    'report.placeholder': 'Genera un informe para rellenar esta zona editable.',
-    'report.generatedTitle': 'Informe VirtROI',
-    'report.summaryHeading': 'Resumen ejecutivo',
-    'report.metricsHeading': 'Métricas clave',
-    'report.chartsHeading': 'Gráficos',
-    'report.notesHeading': 'Notas manuales',
-    'report.notesPlaceholder': 'Edita esta sección con riesgos, supuestos, próximos pasos o comentarios.',
-    'decision.strong.label': 'Caso sólido',
-    'decision.evaluate.label': 'Merece evaluación',
-    'decision.weak.label': 'Caso financiero débil',
-  },
-  pt: {
-    'nav.calculator': 'Calculadora',
-    'nav.charts': 'Gráficos',
-    'nav.formulas': 'Fórmulas',
-    'nav.report': 'Relatório',
-    'language.label': 'Idioma',
-    'tabs.calculator': 'Calculadora',
-    'tabs.charts': 'Gráficos dinâmicos',
-    'tabs.report': 'Relatório',
-    'hero.eyebrow': 'Estratégia de custos de virtualização',
-    'hero.title': 'Calcule se mudar seu stack de virtualização compensa financeiramente.',
-    'hero.copy': 'Compare produtos precificados por core ou socket, inclua custos adicionais como capacidade HCI e visualize custo acumulado, economia, payback e ROI.',
-    'charts.eyebrow': 'Gráficos dinâmicos',
-    'charts.title': 'Visualize o business case ao longo do tempo',
-    'charts.copy': 'Os gráficos atualizam instantaneamente e estendem o período selecionado com dois anos projetados.',
-    'charts.projectionNote': 'A projeção inclui dois anos adicionais de cenário além do período selecionado.',
-    'report.eyebrow': 'Relatório editável',
-    'report.title': 'Gere, edite e exporte seu business case',
-    'report.copy': 'Crie um relatório editável com os números atuais e snapshots dos gráficos, depois exporte para PDF pelo navegador.',
-    'report.generate': 'Gerar relatório',
-    'report.exportPdf': 'Exportar PDF',
-    'report.placeholder': 'Gere um relatório para preencher esta área editável.',
-  },
-  it: {
-    'nav.calculator': 'Calcolatore',
-    'nav.charts': 'Grafici',
-    'nav.formulas': 'Formule',
-    'nav.report': 'Report',
-    'language.label': 'Lingua',
-    'tabs.calculator': 'Calcolatore',
-    'tabs.charts': 'Grafici dinamici',
-    'tabs.report': 'Report',
-    'hero.eyebrow': 'Strategia dei costi di virtualizzazione',
-    'hero.title': 'Calcola se cambiare stack di virtualizzazione conviene finanziariamente.',
-    'hero.copy': 'Confronta prodotti prezzati per core o socket, includi costi aggiuntivi come capacità HCI e visualizza costi cumulativi, risparmi, payback e ROI.',
-    'charts.eyebrow': 'Grafici dinamici',
-    'charts.title': 'Visualizza il business case nel tempo',
-    'charts.copy': 'I grafici si aggiornano subito ed estendono il periodo selezionato con due anni proiettati.',
-    'charts.projectionNote': 'La proiezione include due anni di scenario aggiuntivi oltre il periodo selezionato.',
-    'report.eyebrow': 'Report modificabile',
-    'report.title': 'Genera, modifica ed esporta il business case',
-    'report.copy': 'Crea un report modificabile con i dati correnti e snapshot dei grafici, poi esportalo in PDF dal browser.',
-    'report.generate': 'Genera report',
-    'report.exportPdf': 'Esporta PDF',
-    'report.placeholder': 'Genera un report per popolare questa area modificabile.',
-  },
-  ja: {
-    'nav.calculator': '計算機',
-    'nav.charts': 'チャート',
-    'nav.formulas': '数式',
-    'nav.report': 'レポート',
-    'language.label': '言語',
-    'tabs.calculator': '計算機',
-    'tabs.charts': '動的チャート',
-    'tabs.report': 'レポート',
-    'hero.eyebrow': '仮想化コスト戦略',
-    'hero.title': '仮想化スタックの変更が財務的に妥当かを計算します。',
-    'hero.copy': 'コア単位またはソケット単位の価格を比較し、HCI 容量などの追加コストを含め、累積コスト、削減額、回収期間、ROI を可視化します。',
-    'charts.eyebrow': '動的チャート',
-    'charts.title': 'ビジネスケースを時系列で可視化',
-    'charts.copy': 'チャートは即時更新され、選択した期間に2年間の予測シナリオを追加します。',
-    'charts.projectionNote': '選択した分析期間の先に、追加で2年間のシナリオ予測を含みます。',
-    'report.eyebrow': '編集可能なレポート',
-    'report.title': 'ビジネスケースを生成・編集・PDF出力',
-    'report.copy': '現在の数値とチャート画像を含む編集可能なレポートを作成し、ブラウザの印刷機能でPDFに出力します。',
-    'report.generate': 'レポート生成',
-    'report.exportPdf': 'PDF出力',
-    'report.placeholder': 'レポートを生成すると、この編集エリアに内容が入ります。',
-  },
-  de: {
-    'nav.calculator': 'Rechner',
-    'nav.charts': 'Diagramme',
-    'nav.formulas': 'Formeln',
-    'nav.report': 'Report',
-    'language.label': 'Sprache',
-    'tabs.calculator': 'Rechner',
-    'tabs.charts': 'Dynamische Diagramme',
-    'tabs.report': 'Report',
-    'hero.eyebrow': 'Kostenstrategie für Virtualisierung',
-    'hero.title': 'Berechne, ob sich der Wechsel deines Virtualisierungs-Stacks finanziell lohnt.',
-    'hero.copy': 'Vergleiche Produkte mit Core- oder Socket-Preisen, berücksichtige Zusatzkosten wie HCI-Kapazität und visualisiere kumulative Kosten, Einsparungen, Payback und ROI.',
-    'charts.eyebrow': 'Dynamische Diagramme',
-    'charts.title': 'Visualisiere den Business Case über die Zeit',
-    'charts.copy': 'Diagramme aktualisieren sich sofort und erweitern den gewählten Zeitraum um zwei prognostizierte Szenariojahre.',
-    'charts.projectionNote': 'Die Projektion enthält zwei zusätzliche Szenariojahre nach dem gewählten Analysezeitraum.',
-    'report.eyebrow': 'Editierbarer Report',
-    'report.title': 'Business Case erstellen, bearbeiten und exportieren',
-    'report.copy': 'Erstelle einen editierbaren Report mit aktuellen Zahlen und Diagramm-Snapshots und exportiere ihn per Browser-Druckdialog als PDF.',
-    'report.generate': 'Report erstellen',
-    'report.exportPdf': 'PDF exportieren',
-    'report.placeholder': 'Erstelle einen Report, um diesen editierbaren Bereich zu füllen.',
-    'decision.strong.label': 'Starker Case',
-  },
-};
+let translationsCache = null;
+
+function loadTranslations() {
+  if (translationsCache) return translationsCache;
+
+  if (typeof window !== 'undefined' && window.VirtROILocales) {
+    translationsCache = window.VirtROILocales;
+    return translationsCache;
+  }
+
+  if (typeof require !== 'undefined') {
+    translationsCache = Object.fromEntries(LANGUAGE_OPTIONS.map((option) => [option.code, require(`./locales/${option.code}.js`)]));
+    return translationsCache;
+  }
+
+  translationsCache = {};
+  return translationsCache;
+}
 
 function getLanguageOptions() {
   return LANGUAGE_OPTIONS.map((option) => ({ ...option }));
 }
 
-function translate(language, key) {
-  return (TRANSLATIONS[language] && TRANSLATIONS[language][key]) || TRANSLATIONS.en[key] || key;
+function translate(language, key, replacements = {}) {
+  const translations = loadTranslations();
+  const template = (translations[language] && translations[language][key]) || (translations.en && translations.en[key]) || key;
+  return Object.entries(replacements).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), template);
 }
 
 function toFiniteNumber(value, fallback = 0) {
@@ -332,17 +193,18 @@ function formatCurrency(value) {
   return amount < 0 ? `-${formatted}` : formatted;
 }
 
-function formatYears(value) {
+function formatYears(value, language = 'en') {
   if (value === null || value === undefined || !Number.isFinite(value)) {
-    return 'No payback';
+    return translate(language, 'format.noPayback');
   }
   const rounded = roundTo(value, 2);
-  return `${rounded.toLocaleString('en-US')} ${rounded === 1 ? 'year' : 'years'}`;
+  const yearLabel = translate(language, rounded === 1 ? 'format.year' : 'format.years');
+  return `${rounded.toLocaleString('en-US')} ${yearLabel}`;
 }
 
-function formatPercent(value) {
+function formatPercent(value, language = 'en') {
   if (value === null || value === undefined || !Number.isFinite(value)) {
-    return 'N/A';
+    return translate(language, 'format.notAvailable');
   }
   return `${roundTo(value, 1).toLocaleString('en-US')}%`;
 }
@@ -351,19 +213,34 @@ function buildReportModel(inputs, result, language = 'en') {
   const currentPlatform = inputs.currentPlatform || DEFAULT_INPUTS.currentPlatform;
   const targetPlatform = inputs.targetPlatform || DEFAULT_INPUTS.targetPlatform;
   const years = toFiniteNumber(inputs.years, DEFAULT_INPUTS.years);
+  const yearLabel = translate(language, years === 1 ? 'format.year' : 'format.years');
 
   return {
     title: translate(language, 'report.generatedTitle'),
-    summary: `${currentPlatform} to ${targetPlatform}: ${formatCurrency(result.annualSavings)} annual savings, ${formatYears(result.paybackYears)} payback, and ${formatCurrency(result.netSavingsAfterMigration)} net savings over ${years} ${years === 1 ? 'year' : 'years'}.`,
+    summary: translate(language, 'report.summary', {
+      currentPlatform,
+      targetPlatform,
+      annualSavings: formatCurrency(result.annualSavings),
+      payback: formatYears(result.paybackYears, language),
+      netSavings: formatCurrency(result.netSavingsAfterMigration),
+      years,
+      yearLabel,
+    }),
     metrics: [
-      { label: `${currentPlatform} annual cost`, value: formatCurrency(result.currentAnnualCost) },
-      { label: `${targetPlatform} annual cost`, value: formatCurrency(result.targetAnnualCost) },
-      { label: 'Annual savings', value: formatCurrency(result.annualSavings) },
-      { label: 'One-time costs', value: formatCurrency(result.oneTimeCosts) },
-      { label: 'Payback period', value: formatYears(result.paybackYears) },
-      { label: 'Net savings', value: formatCurrency(result.netSavingsAfterMigration) },
-      { label: 'ROI', value: formatPercent(result.roiPercent) },
-      { label: 'Capacity', value: `${result.totalCores.toLocaleString('en-US')} cores / ${result.totalSockets.toLocaleString('en-US')} sockets` },
+      { label: translate(language, 'report.metric.currentAnnualCost', { platform: currentPlatform }), value: formatCurrency(result.currentAnnualCost) },
+      { label: translate(language, 'report.metric.targetAnnualCost', { platform: targetPlatform }), value: formatCurrency(result.targetAnnualCost) },
+      { label: translate(language, 'report.metric.annualSavings'), value: formatCurrency(result.annualSavings) },
+      { label: translate(language, 'report.metric.oneTimeCosts'), value: formatCurrency(result.oneTimeCosts) },
+      { label: translate(language, 'report.metric.paybackPeriod'), value: formatYears(result.paybackYears, language) },
+      { label: translate(language, 'report.metric.netSavings'), value: formatCurrency(result.netSavingsAfterMigration) },
+      { label: translate(language, 'report.metric.roi'), value: formatPercent(result.roiPercent, language) },
+      {
+        label: translate(language, 'report.metric.capacity'),
+        value: translate(language, 'report.metric.capacityValue', {
+          cores: result.totalCores.toLocaleString('en-US'),
+          sockets: result.totalSockets.toLocaleString('en-US'),
+        }),
+      },
     ],
     chartSlots: ['costChart', 'savingsChart'],
   };
@@ -391,6 +268,13 @@ function setText(id, value) {
   const element = getElement(id);
   if (element) {
     element.textContent = value;
+  }
+}
+
+function setHtml(id, value) {
+  const element = getElement(id);
+  if (element) {
+    element.innerHTML = value;
   }
 }
 
@@ -436,8 +320,23 @@ function applyTranslations(language = getCurrentLanguage()) {
   if (typeof document === 'undefined') return;
 
   document.documentElement.lang = language;
+  document.title = translate(language, 'page.title');
+  const description = document.querySelector('meta[name="description"]');
+  if (description) {
+    description.setAttribute('content', translate(language, 'page.description'));
+  }
+
   document.querySelectorAll('[data-i18n]').forEach((element) => {
     element.textContent = translate(language, element.dataset.i18n);
+  });
+
+  document.querySelectorAll('[data-i18n-attr]').forEach((element) => {
+    element.dataset.i18nAttr.split(';').forEach((mapping) => {
+      const [attribute, key] = mapping.split(':');
+      if (attribute && key) {
+        element.setAttribute(attribute, translate(language, key));
+      }
+    });
   });
 }
 
@@ -516,30 +415,41 @@ function exportReportToPdf() {
 }
 
 function renderResults(result, inputs) {
+  const language = getCurrentLanguage();
   const decision = getDecision(result);
   const decisionCard = getElement('decisionCard');
+  const periodLabel = `${inputs.years} ${translate(language, inputs.years === 1 ? 'format.year' : 'format.years')}`;
+  const currentLicense = formatCurrency(result.currentLicenseAnnualCost);
+  const currentAddons = formatCurrency(inputs.currentAdditionalAnnualCost);
+  const targetLicense = formatCurrency(result.targetLicenseAnnualCost);
+  const targetAddons = formatCurrency(inputs.targetAdditionalAnnualCost);
+  const migrationCost = formatCurrency(inputs.migrationCost);
+  const hardwareCost = formatCurrency(inputs.hardwareCost);
+  const renewalCost = formatCurrency(inputs.renewalCost);
 
-  setText('currentPlatformLabel', inputs.currentPlatform);
-  setText('targetPlatformLabel', inputs.targetPlatform);
+  setHtml('currentAnnualCostLabel', `${escapeHtml(inputs.currentPlatform)} ${escapeHtml(translate(language, 'metrics.currentAnnualCost'))}`);
+  setHtml('targetAnnualCostLabel', `${escapeHtml(inputs.targetPlatform)} ${escapeHtml(translate(language, 'metrics.targetAnnualCost'))}`);
   setText('totalCores', result.totalCores.toLocaleString('en-US'));
   setText('totalSockets', result.totalSockets.toLocaleString('en-US'));
   setText('currentAnnualCost', formatCurrency(result.currentAnnualCost));
   setText('targetAnnualCost', formatCurrency(result.targetAnnualCost));
-  setText('currentLicenseAnnualCost', formatCurrency(result.currentLicenseAnnualCost));
-  setText('targetLicenseAnnualCost', formatCurrency(result.targetLicenseAnnualCost));
-  setText('currentAdditionalCostDisplay', formatCurrency(inputs.currentAdditionalAnnualCost));
-  setText('targetAdditionalCostDisplay', formatCurrency(inputs.targetAdditionalAnnualCost));
-  setText('migrationCostDisplay', formatCurrency(inputs.migrationCost));
-  setText('hardwareCostDisplay', formatCurrency(inputs.hardwareCost));
-  setText('renewalCostDisplay', formatCurrency(inputs.renewalCost));
+  setHtml('currentAnnualCostBreakdown', `${escapeHtml(translate(language, 'metrics.license'))} <span id="currentLicenseAnnualCost">${escapeHtml(currentLicense)}</span> + ${escapeHtml(translate(language, 'metrics.addons'))} <span id="currentAdditionalCostDisplay">${escapeHtml(currentAddons)}</span>`);
+  setHtml('targetAnnualCostBreakdown', `${escapeHtml(translate(language, 'metrics.license'))} <span id="targetLicenseAnnualCost">${escapeHtml(targetLicense)}</span> + ${escapeHtml(translate(language, 'metrics.addons'))} <span id="targetAdditionalCostDisplay">${escapeHtml(targetAddons)}</span>`);
   setText('oneTimeCosts', formatCurrency(result.oneTimeCosts));
+  setHtml('oneTimeCostsBreakdown', translate(language, 'metrics.oneTimeBreakdown', {
+    migration: `<span id="migrationCostDisplay">${escapeHtml(migrationCost)}</span>`,
+    hardware: `<span id="hardwareCostDisplay">${escapeHtml(hardwareCost)}</span>`,
+    renewals: `<span id="renewalCostDisplay">${escapeHtml(renewalCost)}</span>`,
+  }));
   setText('annualSavings', formatCurrency(result.annualSavings));
-  setText('paybackYears', formatYears(result.paybackYears));
+  setText('paybackYears', formatYears(result.paybackYears, language));
   setText('netSavingsAfterMigration', formatCurrency(result.netSavingsAfterMigration));
-  setText('roiPercent', formatPercent(result.roiPercent));
-  setText('analysisPeriodLabel', `${inputs.years} ${inputs.years === 1 ? 'year' : 'years'}`);
-  setText('decisionLabel', translate(getCurrentLanguage(), `decision.${decision.tone}.label`));
-  setText('decisionSummary', decision.summary);
+  setText('roiPercent', formatPercent(result.roiPercent, language));
+  setHtml('analysisPeriodBreakdown', translate(language, 'metrics.overPeriod', {
+    period: `<span id="analysisPeriodLabel">${escapeHtml(periodLabel)}</span>`,
+  }));
+  setText('decisionLabel', translate(language, `decision.${decision.tone}.label`));
+  setText('decisionSummary', translate(language, `decision.${decision.tone}.summary`));
 
   if (decisionCard) {
     decisionCard.className = `decision-card ${decision.tone}`;
