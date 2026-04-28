@@ -532,11 +532,130 @@ function generateReport() {
     </article>`;
 }
 
-function exportReportToPdf() {
+function ensureGeneratedReport() {
   const reportBody = getElement('reportBody');
-  if (reportBody && !reportBody.textContent.trim()) {
+  if (!reportBody) return null;
+  if (!reportBody.querySelector('.generated-report')) {
     generateReport();
   }
+  return reportBody;
+}
+
+function buildDownloadFilename(baseName, extension, date = new Date()) {
+  const stamp = date.toISOString().slice(0, 10);
+  const safeBaseName = String(baseName || 'virtroi-report')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'virtroi-report';
+  const safeExtension = String(extension || '').replace(/^\.+/, '') || 'html';
+  return `${safeBaseName}-${stamp}.${safeExtension}`;
+}
+
+function downloadBlob(blob, filename) {
+  if (typeof document === 'undefined' || typeof URL === 'undefined') return;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function downloadReportAsHtml() {
+  const reportBody = ensureGeneratedReport();
+  if (!reportBody || typeof Blob === 'undefined') return;
+  const language = getCurrentLanguage();
+  const title = translate(language, 'report.generatedTitle');
+  const html = `<!DOCTYPE html>
+<html lang="${escapeHtml(language)}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body { margin: 0; padding: 32px; color: #111827; background: #f5f7fb; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .report-document { max-width: 980px; margin: 0 auto; border: 1px solid #d9e1ef; border-radius: 24px; padding: 32px; background: #fff; }
+    h1 { margin-top: 0; font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: -0.055em; }
+    h2 { margin-top: 28px; }
+    .report-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .report-metrics div { border: 1px solid #d9e1ef; border-radius: 16px; padding: 14px; background: #fbfdff; }
+    .report-metrics dt { color: #5b6475; font-size: 0.82rem; font-weight: 850; text-transform: uppercase; }
+    .report-metrics dd { margin: 4px 0 0; font-size: 1.35rem; font-weight: 850; }
+    .report-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .report-chart-grid img { width: 100%; border: 1px solid #d9e1ef; border-radius: 16px; }
+    @media (max-width: 720px) { body { padding: 16px; } .report-document, .report-metrics, .report-chart-grid { display: block; } .report-metrics div, .report-chart-grid img { margin-bottom: 12px; } }
+  </style>
+</head>
+<body>
+  <main class="report-document">
+    ${reportBody.innerHTML}
+  </main>
+</body>
+</html>`;
+  downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), buildDownloadFilename('virtroi-report', 'html'));
+}
+
+function downloadCanvasAsPng(canvas, filename) {
+  if (!canvas) return;
+  if (typeof canvas.toBlob === 'function') {
+    canvas.toBlob((blob) => {
+      if (blob) downloadBlob(blob, filename);
+    }, 'image/png');
+    return;
+  }
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function downloadGraphsAsPng() {
+  const inputs = getInputs();
+  const result = calculateRoi(inputs);
+  renderCharts(result, inputs);
+
+  const charts = [
+    { title: translate(getCurrentLanguage(), 'charts.costTitle'), canvas: getElement('costChart') },
+    { title: translate(getCurrentLanguage(), 'charts.netSavingsTitle'), canvas: getElement('savingsChart') },
+  ].filter((chart) => chart.canvas);
+  if (!charts.length || typeof document === 'undefined') return;
+
+  const gap = 28;
+  const titleHeight = 36;
+  const padding = 24;
+  const width = Math.max(...charts.map((chart) => chart.canvas.width || 640)) + padding * 2;
+  const height = charts.reduce((total, chart) => total + titleHeight + (chart.canvas.height || 280) + gap, padding * 2 - gap);
+  const combined = document.createElement('canvas');
+  combined.width = width;
+  combined.height = height;
+  const context = combined.getContext('2d');
+  if (!context) return;
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = '#111827';
+  context.font = '700 24px system-ui, sans-serif';
+  context.fillText('VirtROI graphs', padding, padding + 8);
+
+  let y = padding + titleHeight;
+  charts.forEach((chart) => {
+    context.fillStyle = '#111827';
+    context.font = '700 18px system-ui, sans-serif';
+    context.fillText(chart.title, padding, y);
+    y += 12;
+    context.drawImage(chart.canvas, padding, y);
+    y += (chart.canvas.height || 280) + gap;
+  });
+
+  downloadCanvasAsPng(combined, buildDownloadFilename('virtroi-graphs', 'png'));
+}
+
+function exportReportToPdf() {
+  ensureGeneratedReport();
   if (typeof window !== 'undefined' && typeof window.print === 'function') {
     window.print();
   }
@@ -743,6 +862,16 @@ function initializeApp() {
     exportPdfButton.addEventListener('click', exportReportToPdf);
   }
 
+  const downloadHtmlButton = getElement('downloadHtml');
+  if (downloadHtmlButton) {
+    downloadHtmlButton.addEventListener('click', downloadReportAsHtml);
+  }
+
+  const downloadGraphsButton = getElement('downloadGraphs');
+  if (downloadGraphsButton) {
+    downloadGraphsButton.addEventListener('click', downloadGraphsAsPng);
+  }
+
   applyTranslations();
   calculateAndRender();
 }
@@ -770,5 +899,6 @@ if (typeof module !== 'undefined') {
     getLanguageOptions,
     translate,
     buildReportModel,
+    buildDownloadFilename,
   };
 }

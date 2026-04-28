@@ -120,6 +120,8 @@
   "page.title": "VirtROI | Virtualization ROI Calculator",
   "report.chartsHeading": "Charts",
   "report.copy": "Erstelle einen editierbaren Report mit aktuellen Zahlen und Diagramm-Snapshots und exportiere ihn per Browser-Druckdialog als PDF.",
+  "report.downloadGraphs": "Diagramme als PNG herunterladen",
+  "report.downloadHtml": "HTML herunterladen",
   "report.editorAria": "Editable VirtROI report",
   "report.exportPdf": "PDF exportieren",
   "report.eyebrow": "Editierbarer Report",

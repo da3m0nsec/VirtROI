@@ -19,6 +19,7 @@ const {
   getLanguageOptions,
   translate,
   buildReportModel,
+  buildDownloadFilename,
 } = require('../app.js');
 
 test('calculateRoi computes the default Product 1 to Product 2 scenario', () => {
@@ -227,6 +228,16 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
   assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart']);
+});
+
+test('report export controls include HTML and graph PNG downloads with stable filenames', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  assert.ok(html.includes('id="downloadHtml"'));
+  assert.ok(html.includes('id="downloadGraphs"'));
+  assert.ok(html.indexOf('id="downloadHtml"') > html.indexOf('id="exportPdf"'));
+  assert.equal(buildDownloadFilename('VirtROI Report!', '.html', new Date('2026-04-28T12:00:00Z')), 'virtroi-report-2026-04-28.html');
+  assert.equal(buildDownloadFilename('Graphs', 'png', new Date('2026-04-28T12:00:00Z')), 'graphs-2026-04-28.png');
 });
 
 

@@ -156,23 +156,28 @@ main {
 
 .tabs {
   display: inline-flex;
+  align-items: center;
   gap: 8px;
+  max-width: 100%;
   margin-bottom: 18px;
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 6px;
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 12px 34px rgba(27, 39, 70, 0.08);
+  overflow: hidden;
 }
 
 .tab-button {
+  max-width: 100%;
   border: 0;
   border-radius: 999px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .tab-button.active {
@@ -604,6 +609,11 @@ canvas {
   .tabs {
     display: grid;
     width: 100%;
+    justify-items: center;
+  }
+
+  .tab-button {
+    width: calc(100% - 8px);
   }
 
   .panel {
