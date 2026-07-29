@@ -19,6 +19,7 @@ VirtROI estimates:
 - ROI percentage
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
 - dynamic charts for cumulative cost and net savings over time, including two extra projected scenario years
+- percentage variance charts showing how net savings react when current or target pricing and sizing move by ±30%
 - currency output in USD, EUR, GBP, JPY, or BRL
 - recurring cost inputs as annualized amounts or totals for the selected analysis period
 - language options for English, Spanish, Portuguese, Italian, Japanese, and German
@@ -138,6 +139,23 @@ The **Dynamic charts** tab renders browser-native canvas charts without external
 
 Charts update automatically when any input changes. The x-axis marks projected years with `*`, so a 3-year analysis also shows years 4 and 5 as forward-looking scenario points.
 
+### Percentage variance scenarios
+
+Two additional charts answer "what if the quote or the sizing moves?". Both plot net savings over the analysis period across a −30% to +30% range, and both vary **one side of the comparison at a time**, so the blue and green lines are independent scenarios rather than a combined one. The `0%` point is your current scenario, and a reference line marks break-even.
+
+- **Pricing variance**: the unit price of one product moves by a percentage. Additional annual costs and one-time costs stay fixed, because a price renegotiation does not change how much capacity you consume.
+- **Sizing variance**: capacity for one side moves by a percentage. License cost *and* additional annual costs scale together, on the assumption that add-ons such as HCI TBs, backup, or support are capacity-driven. One-time costs stay fixed, since they are project-level.
+
+The two charts are identical when a product has no additional annual costs, and diverge as add-ons grow: sizing variance then moves net savings more sharply than pricing variance does.
+
+Typical uses:
+
+- see how much target-side discount is needed to reach break-even
+- test whether the case survives a current-platform renewal uplift
+- check the impact of consolidating onto fewer cores or sockets after migration
+
+Both charts are included in the report snapshots and in the graphs PNG download.
+
 ## Editable PDF report
 
 The **Report** tab can generate a browser-side, editable business-case report from the current inputs and results. The generated report includes:
@@ -187,6 +205,11 @@ One-time costs = migration services + hardware purchases + renewals/extensions
 Payback years = one-time costs / annual savings
 Net savings = annual savings × years - one-time costs
 ROI % = net savings / one-time costs × 100
+
+Variance factor = 1 + variance % / 100
+Pricing variance annual cost = license annual cost × variance factor + additional annual costs
+Sizing variance annual cost = (license annual cost + additional annual costs) × variance factor
+Variance net savings = (varied side annual cost - unchanged side annual cost) × years - one-time costs
 ```
 
 If annual savings are zero or negative, VirtROI reports `No payback` instead of a misleading payback period.
