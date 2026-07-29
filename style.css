@@ -379,10 +379,25 @@ select:focus {
   font-weight: 750;
 }
 
+.variance-note {
+  border-color: rgba(33, 85, 214, 0.24);
+  color: var(--brand-dark);
+  background: rgba(33, 85, 214, 0.08);
+}
+
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.variance-heading {
+  margin: 30px 0 14px;
+}
+
+.variance-heading h3 {
+  font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+  letter-spacing: -0.035em;
 }
 
 .chart-card {

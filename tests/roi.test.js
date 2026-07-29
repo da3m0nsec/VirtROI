@@ -6,6 +6,8 @@ const path = require('node:path');
 const {
   calculateRoi,
   buildChartSeries,
+  buildVarianceSeries,
+  formatVarianceAxisLabel,
   getDecision,
   formatCurrency,
   formatYears,
@@ -174,6 +176,79 @@ test('buildChartSeries projects the selected period plus two extra scenario year
   ]);
 });
 
+test('buildVarianceSeries varies one side at a time from -30% to +30% around the current scenario', () => {
+  const result = calculateRoi({
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    migrationCost: 40000,
+    years: 3,
+  });
+
+  const series = buildVarianceSeries(result, 3, 'price');
+
+  assert.deepEqual(series.map((point) => point.variancePercent), [-30, -20, -10, 0, 10, 20, 30]);
+  assert.deepEqual(series.map((point) => point.baseline), [false, false, false, true, false, false, false]);
+
+  const baselinePoint = series.find((point) => point.baseline);
+  assert.equal(baselinePoint.currentVarianceNetSavings, result.netSavingsAfterMigration);
+  assert.equal(baselinePoint.targetVarianceNetSavings, result.netSavingsAfterMigration);
+
+  // Current license cost 192,000/year: +10% adds 19,200/year over 3 years.
+  assert.equal(series.at(-3).currentVarianceNetSavings, 266000 + 19200 * 3);
+  // Target license cost 90,000/year: +10% removes 9,000/year of savings over 3 years.
+  assert.equal(series.at(-3).targetVarianceNetSavings, 266000 - 9000 * 3);
+});
+
+test('pricing variance leaves add-ons fixed while sizing variance scales them with capacity', () => {
+  const result = calculateRoi({
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    currentAdditionalAnnualCost: 20000,
+    targetAdditionalAnnualCost: 10000,
+    migrationCost: 40000,
+    years: 3,
+  });
+
+  const priceSeries = buildVarianceSeries(result, 3, 'price', [10]);
+  const sizingSeries = buildVarianceSeries(result, 3, 'sizing', [10]);
+  const baseNetSavings = result.netSavingsAfterMigration;
+
+  // Price variance only moves the 192,000 license cost.
+  assert.equal(priceSeries[0].currentVarianceNetSavings, baseNetSavings + 19200 * 3);
+  // Sizing variance also moves the 20,000 capacity-driven add-ons.
+  assert.equal(sizingSeries[0].currentVarianceNetSavings, baseNetSavings + (19200 + 2000) * 3);
+  assert.equal(priceSeries[0].targetVarianceNetSavings, baseNetSavings - 9000 * 3);
+  assert.equal(sizingSeries[0].targetVarianceNetSavings, baseNetSavings - (9000 + 1000) * 3);
+});
+
+test('variance axis labels are signed percentages', () => {
+  assert.equal(formatVarianceAxisLabel({ variancePercent: -30 }), '-30%');
+  assert.equal(formatVarianceAxisLabel({ variancePercent: 0 }), '0%');
+  assert.equal(formatVarianceAxisLabel({ variancePercent: 30 }), '+30%');
+});
+
+test('variance charts are rendered in the charts tab with their own legends', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  assert.ok(html.includes('id="priceVarianceChart"'));
+  assert.ok(html.includes('id="sizingVarianceChart"'));
+  assert.ok(html.indexOf('id="priceVarianceChart"') > html.indexOf('id="savingsChart"'));
+  assert.ok(html.includes('data-i18n="charts.legendCurrentVariance"'));
+  assert.ok(html.includes('data-i18n="charts.legendTargetSizing"'));
+});
+
 test('getDecision labels strong, evaluation, and weak cases', () => {
   assert.equal(getDecision({ annualSavings: 84000, paybackYears: 0.48 }).label, 'Strong case');
   assert.equal(getDecision({ annualSavings: 20000, paybackYears: 2.5 }).label, 'Worth evaluating');
@@ -227,7 +302,7 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.equal(report.title, 'VirtROI report');
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
-  assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart']);
+  assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart', 'priceVarianceChart', 'sizingVarianceChart']);
 });
 
 test('report export controls include HTML and graph PNG downloads with stable filenames', () => {

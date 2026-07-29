@@ -43,6 +43,8 @@ const COST_PERIOD_OPTIONS = [
   { code: 'total', labelKey: 'options.costPeriodTotal' },
 ];
 
+const VARIANCE_STEPS_PERCENT = [-30, -20, -10, 0, 10, 20, 30];
+
 let translationsCache = null;
 
 function loadTranslations() {
@@ -232,6 +234,41 @@ function buildChartSeries(result, years, extraProjectionYears = 2) {
   return points;
 }
 
+function applyVarianceFactor(licenseAnnualCost, additionalAnnualCost, factor, mode) {
+  if (mode === 'sizing') {
+    return (licenseAnnualCost + additionalAnnualCost) * factor;
+  }
+  return licenseAnnualCost * factor + additionalAnnualCost;
+}
+
+function buildVarianceSeries(result, years, mode = 'price', variancePercents = VARIANCE_STEPS_PERCENT) {
+  const analysisYears = Math.max(1, Math.round(toFiniteNumber(years, DEFAULT_INPUTS.years)));
+  const oneTimeCosts = toFiniteNumber(result.oneTimeCosts ?? result.migrationCost);
+  const currentAnnualCost = toFiniteNumber(result.currentAnnualCost);
+  const targetAnnualCost = toFiniteNumber(result.targetAnnualCost);
+  const currentLicenseAnnualCost = toFiniteNumber(result.currentLicenseAnnualCost);
+  const targetLicenseAnnualCost = toFiniteNumber(result.targetLicenseAnnualCost);
+  const currentAdditionalAnnualCost = currentAnnualCost - currentLicenseAnnualCost;
+  const targetAdditionalAnnualCost = targetAnnualCost - targetLicenseAnnualCost;
+  const netSavingsFor = (current, target) => roundTo((current - target) * analysisYears - oneTimeCosts, 2);
+
+  return variancePercents.map((variancePercent) => {
+    const factor = 1 + toFiniteNumber(variancePercent) / 100;
+    return {
+      variancePercent,
+      currentVarianceNetSavings: netSavingsFor(
+        applyVarianceFactor(currentLicenseAnnualCost, currentAdditionalAnnualCost, factor, mode),
+        targetAnnualCost,
+      ),
+      targetVarianceNetSavings: netSavingsFor(
+        currentAnnualCost,
+        applyVarianceFactor(targetLicenseAnnualCost, targetAdditionalAnnualCost, factor, mode),
+      ),
+      baseline: toFiniteNumber(variancePercent) === 0,
+    };
+  });
+}
+
 function getDecision(result) {
   if (result.annualSavings > 0 && result.paybackYears !== null && result.paybackYears <= 1) {
     return {
@@ -316,7 +353,7 @@ function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_IN
         }),
       },
     ],
-    chartSlots: ['costChart', 'savingsChart'],
+    chartSlots: ['costChart', 'savingsChart', 'priceVarianceChart', 'sizingVarianceChart'],
   };
 }
 
@@ -502,9 +539,7 @@ function generateReport() {
   renderCharts(result, inputs);
   const language = getCurrentLanguage();
   const report = buildReportModel(inputs, result, language, inputs.currency);
-  const costChart = getChartImage('costChart');
-  const savingsChart = getChartImage('savingsChart');
-  const chartImages = [costChart, savingsChart].filter(Boolean);
+  const chartImages = report.chartSlots.map((slot) => getChartImage(slot)).filter(Boolean);
 
   reportBody.innerHTML = `
     <article class="generated-report">
@@ -618,9 +653,12 @@ function downloadGraphsAsPng() {
   const result = calculateRoi(inputs);
   renderCharts(result, inputs);
 
+  const language = getCurrentLanguage();
   const charts = [
-    { title: translate(getCurrentLanguage(), 'charts.costTitle'), canvas: getElement('costChart') },
-    { title: translate(getCurrentLanguage(), 'charts.netSavingsTitle'), canvas: getElement('savingsChart') },
+    { title: translate(language, 'charts.costTitle'), canvas: getElement('costChart') },
+    { title: translate(language, 'charts.netSavingsTitle'), canvas: getElement('savingsChart') },
+    { title: translate(language, 'charts.priceVarianceTitle'), canvas: getElement('priceVarianceChart') },
+    { title: translate(language, 'charts.sizingVarianceTitle'), canvas: getElement('sizingVarianceChart') },
   ].filter((chart) => chart.canvas);
   if (!charts.length || typeof document === 'undefined') return;
 
@@ -714,10 +752,23 @@ function drawChartSegment(context, from, to, dashed) {
   });
 }
 
-function drawChart(canvas, series, keys, colors, formatter) {
+function formatYearAxisLabel(point) {
+  return `Y${point.year}${point.projected ? '*' : ''}`;
+}
+
+function formatVarianceAxisLabel(point) {
+  const percent = toFiniteNumber(point.variancePercent);
+  return `${percent > 0 ? '+' : ''}${percent}%`;
+}
+
+function drawChart(canvas, series, keys, colors, formatter, options = {}) {
   if (!canvas || typeof canvas.getContext !== 'function') {
     return;
   }
+
+  const axisLabel = options.axisLabel || formatYearAxisLabel;
+  const isAccented = options.accent || ((point) => Boolean(point.projected));
+  const accentColor = options.accentColor || '#8a5a12';
 
   const context = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
@@ -755,11 +806,22 @@ function drawChart(canvas, series, keys, colors, formatter) {
     context.fillText(formatter(value), 8, y + 4);
   }
 
+  if (options.zeroBaseline && minValue < 0 && maxValue > 0) {
+    const zeroY = yFor(0);
+    context.strokeStyle = '#9aa5b8';
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.moveTo(padding.left, zeroY);
+    context.lineTo(width - padding.right, zeroY);
+    context.stroke();
+  }
+
+  context.textAlign = 'center';
   series.forEach((point, index) => {
-    const x = xFor(index);
-    context.fillStyle = point.projected ? '#8a5a12' : '#5b6475';
-    context.fillText(`Y${point.year}${point.projected ? '*' : ''}`, x - 8, height - 14);
+    context.fillStyle = isAccented(point) ? accentColor : '#5b6475';
+    context.fillText(axisLabel(point), xFor(index), height - 14);
   });
+  context.textAlign = 'left';
 
   keys.forEach((key, keyIndex) => {
     context.strokeStyle = colors[keyIndex];
@@ -786,19 +848,32 @@ function drawChart(canvas, series, keys, colors, formatter) {
 
 function renderCharts(result, inputs) {
   const series = buildChartSeries(result, inputs.years);
+  const currency = inputs.currency || getCurrentCurrency();
+  const formatValue = (value) => formatCurrency(value, currency);
+  const varianceOptions = {
+    axisLabel: formatVarianceAxisLabel,
+    accent: (point) => Boolean(point.baseline),
+    accentColor: '#111827',
+    zeroBaseline: true,
+  };
+
+  drawChart(getElement('costChart'), series, ['currentCost', 'targetCost'], ['#2155d6', '#0f8f5f'], formatValue);
+  drawChart(getElement('savingsChart'), series, ['netSavings'], ['#7c3aed'], formatValue);
   drawChart(
-    getElement('costChart'),
-    series,
-    ['currentCost', 'targetCost'],
+    getElement('priceVarianceChart'),
+    buildVarianceSeries(result, inputs.years, 'price'),
+    ['currentVarianceNetSavings', 'targetVarianceNetSavings'],
     ['#2155d6', '#0f8f5f'],
-    (value) => formatCurrency(value, inputs.currency || getCurrentCurrency()),
+    formatValue,
+    varianceOptions,
   );
   drawChart(
-    getElement('savingsChart'),
-    series,
-    ['netSavings'],
-    ['#7c3aed'],
-    (value) => formatCurrency(value, inputs.currency || getCurrentCurrency()),
+    getElement('sizingVarianceChart'),
+    buildVarianceSeries(result, inputs.years, 'sizing'),
+    ['currentVarianceNetSavings', 'targetVarianceNetSavings'],
+    ['#2155d6', '#0f8f5f'],
+    formatValue,
+    varianceOptions,
   );
 }
 
@@ -886,6 +961,8 @@ if (typeof module !== 'undefined') {
     DEFAULT_INPUTS,
     calculateRoi,
     buildChartSeries,
+    buildVarianceSeries,
+    formatVarianceAxisLabel,
     getDecision,
     formatCurrency,
     getCurrencyOptions,
