@@ -316,6 +316,19 @@ test('report export controls include HTML and graph PNG downloads with stable fi
 });
 
 
+test('local script and stylesheet references are cache-busted so deploys cannot serve mixed versions', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const references = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css)[^"]*)"/g)].map((match) => match[1]);
+
+  assert.ok(references.length >= 8, 'expects the stylesheet, locale files, and app.js to be referenced');
+
+  const unversioned = references.filter((reference) => !/\?v=\d+$/.test(reference));
+  assert.deepEqual(unversioned, [], 'every local .js/.css reference needs a ?v= cache-busting marker');
+
+  const versions = new Set(references.map((reference) => reference.split('?v=')[1]));
+  assert.equal(versions.size, 1, 'all assets should share one version marker so they update together');
+});
+
 test('translations are stored as one locale file per supported language', () => {
   const localeDir = path.join(__dirname, '..', 'locales');
   const files = fs.readdirSync(localeDir).filter((file) => file.endsWith('.js')).sort();
