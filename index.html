@@ -302,6 +302,29 @@
               <span><i class="legend-savings"></i> <span data-i18n="charts.legendSavings">Net savings</span></span>
             </div>
           </article>
+
+          <article class="chart-card">
+            <div class="chart-heading">
+              <h3 data-i18n="charts.outlayTitle">Annual cash outlay</h3>
+              <p data-i18n="charts.outlayDescription">What each platform actually costs per budget year. Year 1 of the target includes one-time costs.</p>
+            </div>
+            <button class="chart-expand" type="button" aria-expanded="false" data-i18n="charts.expand">Full screen</button>
+            <canvas id="annualOutlayChart" aria-label="Annual cash outlay chart" data-i18n-attr="aria-label:charts.outlayAria" role="img"></canvas>
+            <div class="legend">
+              <span><i class="legend-current"></i> <span data-i18n="charts.legendCurrentOutlay">Current platform per-year cost</span></span>
+              <span><i class="legend-target"></i> <span data-i18n="charts.legendTargetOutlay">Target platform per-year cost (Y1 incl. one-time costs)</span></span>
+            </div>
+          </article>
+
+          <article class="chart-card">
+            <div class="chart-heading">
+              <h3 data-i18n="charts.scenarioOverlayTitle">Scenario comparison</h3>
+              <p data-i18n="charts.scenarioOverlayDescription">Net savings over time for the current inputs and up to three saved scenarios in the same currency.</p>
+            </div>
+            <button class="chart-expand" type="button" aria-expanded="false" data-i18n="charts.expand">Full screen</button>
+            <canvas id="scenarioOverlayChart" aria-label="Scenario comparison chart" data-i18n-attr="aria-label:charts.scenarioOverlayAria" role="img"></canvas>
+            <div id="scenarioOverlayLegend" class="legend"></div>
+          </article>
         </div>
 
       </section>

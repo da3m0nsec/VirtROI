@@ -19,6 +19,8 @@ VirtROI estimates:
 - ROI percentage
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
 - dynamic charts for cumulative cost and net savings over time, including two extra projected scenario years
+- an annual cash outlay chart showing what each platform actually costs per budget year, with one-time costs loaded into year 1
+- a scenario comparison chart overlaying net savings over time for the current inputs and up to three saved scenarios
 - hover tooltips on every chart and a full-screen mode that stays responsive on mobile and vertical screens
 - a scenario library to save the current inputs under a name, compare saved scenarios side by side, and share a scenario via URL
 - a break-even card translating the decision into concrete unit prices: the target price at which the case stops paying off, and the current-platform price that would keep you where you are
@@ -142,6 +144,14 @@ The **Dynamic charts** tab renders browser-native canvas charts without external
 Charts update automatically when any input changes. The x-axis marks projected years with `*`, so a 3-year analysis also shows years 4 and 5 as forward-looking scenario points.
 
 Hovering any chart shows exact values, and every chart card has a **Full screen** button (Escape closes it) that keeps working on mobile and vertical screens.
+
+### Annual cash outlay
+
+Cumulative lines answer "is the switch worth it?"; the annual cash outlay bars answer the budget owner's question, "what do I pay out each year?". Grouped bars compare the current and target platform per budget year, with one-time costs (migration, hardware, bridge renewals) loaded into the target's year 1 bar — making the typical shape visible: the target is more expensive in year 1 and cheaper every year after. Projected years render with faded bars.
+
+### Scenario comparison
+
+The scenario comparison chart overlays net savings over time for the current inputs plus up to three saved scenarios (same currency, in library order, with a stable color per scenario). It turns the scenario table into a race to break even: which quote crosses zero first, and which never does. The horizon extends to the longest analysis period among the compared scenarios plus two projected years.
 
 ### Scenario library
 

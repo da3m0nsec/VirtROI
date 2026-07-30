@@ -614,6 +614,12 @@ canvas {
 .legend-target { background: var(--strong); }
 .legend-savings { background: var(--purple); }
 
+.overlay-empty {
+  color: var(--muted);
+  font-weight: 600;
+  font-style: italic;
+}
+
 .report {
   margin-top: 0;
 }

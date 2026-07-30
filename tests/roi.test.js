@@ -6,6 +6,8 @@ const path = require('node:path');
 const {
   calculateRoi,
   buildChartSeries,
+  buildAnnualOutlaySeries,
+  buildScenarioOverlay,
   buildScenarioComparison,
   computeBreakEvenUnitPrices,
   encodeInputsToQuery,
@@ -178,6 +180,65 @@ test('buildChartSeries projects the selected period plus two extra scenario year
   ]);
 });
 
+test('buildAnnualOutlaySeries reports per-year cash out with one-time costs loaded into year 1', () => {
+  const result = calculateRoi({
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    migrationCost: 40000,
+    years: 3,
+  });
+
+  const series = buildAnnualOutlaySeries(result, 3);
+
+  assert.deepEqual(series.map((point) => point.year), [1, 2, 3, 4, 5]);
+  assert.deepEqual(series.map((point) => point.projected), [false, false, false, true, true]);
+  assert.ok(series.every((point) => point.currentOutlay === 192000));
+  // Year 1 carries the 40,000 one-time costs on top of the 90,000 annual cost.
+  assert.equal(series[0].targetOutlay, 130000);
+  assert.ok(series.slice(1).every((point) => point.targetOutlay === 90000));
+});
+
+test('buildScenarioOverlay lines up net savings per year for up to four scenarios', () => {
+  const baseInputs = {
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    migrationCost: 40000,
+    years: 3,
+  };
+  const discounted = { ...baseInputs, targetUnitPricePerYear: 3600, years: 4 };
+
+  const overlay = buildScenarioOverlay([
+    { name: 'Current inputs', inputs: baseInputs },
+    { name: 'Discounted quote', inputs: discounted },
+    { name: 'Extra 1', inputs: baseInputs },
+    { name: 'Extra 2', inputs: baseInputs },
+    { name: 'Beyond the cap', inputs: baseInputs },
+  ]);
+
+  // Capped at four scenarios, horizon = longest analysis (4y) + 2 projected.
+  assert.deepEqual(overlay.keys, ['s0', 's1', 's2', 's3']);
+  assert.deepEqual(overlay.names, ['Current inputs', 'Discounted quote', 'Extra 1', 'Extra 2']);
+  assert.equal(overlay.series.length, 7);
+  assert.equal(overlay.series[0].s0, -40000);
+  // Base: 102,000/yr − 40,000 one-time. Discounted: 120,000/yr − 40,000.
+  assert.equal(overlay.series[3].s0, 102000 * 3 - 40000);
+  assert.equal(overlay.series[3].s1, 120000 * 3 - 40000);
+  assert.equal(overlay.series[4].projected, false);
+  assert.equal(overlay.series[5].projected, true);
+});
+
 test('computeBreakEvenUnitPrices converts the break-even point into concrete unit prices', () => {
   const inputs = {
     inputMode: 'topology',
@@ -299,15 +360,17 @@ test('the calculator ships the scenario library and break-even card', () => {
   assert.ok(html.indexOf('id="scenarioTable"') < html.indexOf('id="charts-panel"'));
 });
 
-test('the charts tab ships only the cost and savings charts, each with a fullscreen button', () => {
+test('the charts tab ships cost, savings, outlay, and scenario overlay charts with fullscreen buttons', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
   assert.ok(html.includes('id="costChart"'));
   assert.ok(html.includes('id="savingsChart"'));
-  assert.equal(html.includes('id="priceImpactChart"'), false);
+  assert.ok(html.includes('id="annualOutlayChart"'));
+  assert.ok(html.includes('id="scenarioOverlayChart"'));
+  assert.ok(html.includes('id="scenarioOverlayLegend"'));
   assert.equal(html.includes('id="priceVarianceChart"'), false);
   assert.equal(html.includes('id="sizingVarianceChart"'), false);
-  assert.equal((html.match(/class="chart-expand"/g) || []).length, 2);
+  assert.equal((html.match(/class="chart-expand"/g) || []).length, 4);
 });
 
 test('getDecision labels strong, evaluation, and weak cases', () => {
@@ -366,7 +429,12 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.deepEqual(report.chartSlots, [
     { id: 'costChart', title: 'Cumulative cost' },
     { id: 'savingsChart', title: 'Net savings' },
+    { id: 'annualOutlayChart', title: 'Annual cash outlay' },
   ]);
+
+  // The scenario overlay snapshot joins the report only when scenarios are saved.
+  const withScenarios = buildReportModel(inputs, result, 'en', 'USD', { scenarioCount: 2 });
+  assert.deepEqual(withScenarios.chartSlots.at(-1), { id: 'scenarioOverlayChart', title: 'Scenario comparison' });
 
   // Yearly rows cover year 0 through the analysis period plus two projected years.
   assert.equal(report.yearlyRows.length, 6);

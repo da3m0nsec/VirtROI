@@ -45,6 +45,12 @@ const COST_PERIOD_OPTIONS = [
 
 const SCENARIO_STORAGE_KEY = 'virtroi.scenarios';
 
+// Fixed categorical order: current inputs always blue, saved scenarios keep
+// their color as long as their position in the library is stable.
+const SCENARIO_COLORS = ['#2155d6', '#0f8f5f', '#7c3aed', '#b7791f'];
+
+const MAX_OVERLAY_SCENARIOS = 4;
+
 const SHAREABLE_INPUT_KEYS = Object.keys(DEFAULT_INPUTS);
 
 const NUMERIC_INPUT_KEYS = new Set([
@@ -252,6 +258,54 @@ function buildChartSeries(result, years, extraProjectionYears = 2) {
   return points;
 }
 
+function buildAnnualOutlaySeries(result, years, extraProjectionYears = 2) {
+  const analysisHorizon = Math.max(1, Math.round(toFiniteNumber(years, DEFAULT_INPUTS.years)));
+  const horizon = analysisHorizon + Math.max(0, Math.round(toFiniteNumber(extraProjectionYears, 2)));
+  const oneTimeCosts = toFiniteNumber(result.oneTimeCosts ?? result.migrationCost);
+  const series = [];
+
+  for (let year = 1; year <= horizon; year += 1) {
+    series.push({
+      year,
+      currentOutlay: result.currentAnnualCost,
+      targetOutlay: result.targetAnnualCost + (year === 1 ? oneTimeCosts : 0),
+      projected: year > analysisHorizon,
+    });
+  }
+
+  return series;
+}
+
+function buildScenarioOverlay(scenarios, extraProjectionYears = 2) {
+  const entries = scenarios.slice(0, MAX_OVERLAY_SCENARIOS).map((scenario, index) => {
+    const inputs = scenario.inputs || {};
+    return {
+      key: `s${index}`,
+      name: scenario.name || '',
+      result: calculateRoi(inputs),
+      years: Math.max(1, Math.round(toFiniteNumber(inputs.years, DEFAULT_INPUTS.years))),
+    };
+  });
+
+  const analysisHorizon = Math.max(1, ...entries.map((entry) => entry.years));
+  const horizon = analysisHorizon + Math.max(0, Math.round(toFiniteNumber(extraProjectionYears, 2)));
+  const series = [];
+
+  for (let year = 0; year <= horizon; year += 1) {
+    const row = { year, projected: year > analysisHorizon };
+    entries.forEach((entry) => {
+      row[entry.key] = roundTo(entry.result.annualSavings * year - entry.result.oneTimeCosts, 2);
+    });
+    series.push(row);
+  }
+
+  return {
+    series,
+    keys: entries.map((entry) => entry.key),
+    names: entries.map((entry) => entry.name),
+  };
+}
+
 function computeBreakEvenUnitPrices(result, inputs) {
   const years = Math.max(1, Math.round(toFiniteNumber(inputs.years, DEFAULT_INPUTS.years)));
   const oneTimeCosts = toFiniteNumber(result.oneTimeCosts ?? result.migrationCost);
@@ -357,7 +411,7 @@ function formatPercent(value, language = 'en') {
   return `${roundTo(value, 1).toLocaleString('en-US')}%`;
 }
 
-function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_INPUTS.currency) {
+function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_INPUTS.currency, options = {}) {
   const currentPlatform = inputs.currentPlatform || DEFAULT_INPUTS.currentPlatform;
   const targetPlatform = inputs.targetPlatform || DEFAULT_INPUTS.targetPlatform;
   const years = toFiniteNumber(inputs.years, DEFAULT_INPUTS.years);
@@ -393,6 +447,10 @@ function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_IN
     chartSlots: [
       { id: 'costChart', title: translate(language, 'charts.costTitle') },
       { id: 'savingsChart', title: translate(language, 'charts.netSavingsTitle') },
+      { id: 'annualOutlayChart', title: translate(language, 'charts.outlayTitle') },
+      ...(toFiniteNumber(options.scenarioCount) > 0
+        ? [{ id: 'scenarioOverlayChart', title: translate(language, 'charts.scenarioOverlayTitle') }]
+        : []),
     ],
     yearlyRows: buildChartSeries(result, years).map((point) => ({
       year: point.year,
@@ -586,9 +644,18 @@ function generateReport() {
   renderCharts(result, inputs, { pointLabels: true });
   const language = getCurrentLanguage();
   const currency = inputs.currency || getCurrentCurrency();
-  const report = buildReportModel(inputs, result, language, currency);
+  const report = buildReportModel(inputs, result, language, currency, { scenarioCount: loadStoredScenarios().length });
   const chartFigures = report.chartSlots
-    .map((slot) => ({ title: slot.title, image: getChartImage(slot.id) }))
+    .map((slot) => {
+      const canvas = getElement(slot.id);
+      const card = canvas && typeof canvas.closest === 'function' ? canvas.closest('.chart-card') : null;
+      const legend = card ? card.querySelector('.legend') : null;
+      return {
+        title: slot.title,
+        image: getChartImage(slot.id),
+        legendHtml: legend ? legend.innerHTML : '',
+      };
+    })
     .filter((figure) => figure.image);
   renderCharts(result, inputs);
   const hasProjectedRows = report.yearlyRows.some((row) => row.projected);
@@ -633,7 +700,11 @@ function generateReport() {
       <section>
         <h2>${escapeHtml(translate(language, 'report.chartsHeading'))}</h2>
         <div class="report-chart-grid">
-          ${chartFigures.map((figure) => `<figure><figcaption>${escapeHtml(figure.title)}</figcaption><img src="${figure.image}" alt="${escapeHtml(figure.title)}" /></figure>`).join('')}
+          ${chartFigures.map((figure) => `<figure>
+            <figcaption>${escapeHtml(figure.title)}</figcaption>
+            <img src="${figure.image}" alt="${escapeHtml(figure.title)}" />
+            ${figure.legendHtml ? `<div class="legend">${figure.legendHtml}</div>` : ''}
+          </figure>`).join('')}
         </div>
       </section>
       <section>
@@ -698,6 +769,11 @@ function downloadReportAsHtml() {
     .report-chart-grid figure { margin: 0; }
     .report-chart-grid figcaption { margin-bottom: 6px; font-weight: 850; }
     .report-chart-grid img { width: 100%; border: 1px solid #d9e1ef; border-radius: 16px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; color: #5b6475; font-size: 0.85rem; font-weight: 700; }
+    .legend i { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 999px; }
+    .legend-current { background: #2155d6; }
+    .legend-target { background: #0f8f5f; }
+    .legend-savings { background: #7c3aed; }
     .report-table-wrap { overflow-x: auto; }
     .report-year-table { width: 100%; border-collapse: collapse; }
     .report-year-table th, .report-year-table td { border-bottom: 1px solid #d9e1ef; padding: 9px 12px; text-align: right; }
@@ -743,6 +819,10 @@ function downloadGraphsAsPng() {
   const charts = [
     { title: translate(language, 'charts.costTitle'), canvas: getElement('costChart') },
     { title: translate(language, 'charts.netSavingsTitle'), canvas: getElement('savingsChart') },
+    { title: translate(language, 'charts.outlayTitle'), canvas: getElement('annualOutlayChart') },
+    ...(loadStoredScenarios().length
+      ? [{ title: translate(language, 'charts.scenarioOverlayTitle'), canvas: getElement('scenarioOverlayChart') }]
+      : []),
   ].filter((chart) => chart.canvas);
   if (!charts.length || typeof document === 'undefined') return;
 
@@ -984,6 +1064,113 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
   };
 }
 
+function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
+  if (!canvas || typeof canvas.getContext !== 'function' || !series.length) {
+    return;
+  }
+
+  const axisLabel = options.axisLabel || formatYearAxisLabel;
+  const isAccented = options.accent || ((point) => Boolean(point.projected));
+  const accentColor = options.accentColor || '#8a5a12';
+
+  const context = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(320, rect.width || canvas.clientWidth || 640);
+  const height = Math.max(220, rect.height || canvas.clientHeight || 280);
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  context.scale(dpr, dpr);
+  context.clearRect(0, 0, width, height);
+
+  const padding = { top: 18, right: 20, bottom: 42, left: 72 };
+  const values = series.flatMap((point) => keys.map((key) => point[key]));
+  const maxValue = Math.max(...values, 0);
+  const range = maxValue || 1;
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const groupWidth = plotWidth / series.length;
+  const barGap = 2;
+  const barWidth = Math.max(8, Math.min(46, (groupWidth * 0.64 - barGap * (keys.length - 1)) / keys.length));
+  const groupCenter = (index) => padding.left + groupWidth * index + groupWidth / 2;
+  const yFor = (value) => padding.top + plotHeight - (Math.max(0, value) / range) * plotHeight;
+  const baselineY = yFor(0);
+
+  context.strokeStyle = '#d9e1ef';
+  context.lineWidth = 1;
+  context.fillStyle = '#5b6475';
+  context.font = '12px system-ui, sans-serif';
+
+  for (let i = 0; i <= 4; i += 1) {
+    const y = padding.top + (plotHeight * i) / 4;
+    const value = maxValue - (range * i) / 4;
+    context.beginPath();
+    context.moveTo(padding.left, y);
+    context.lineTo(width - padding.right, y);
+    context.stroke();
+    context.fillText(formatter(value), 8, y + 4);
+  }
+
+  context.textAlign = 'center';
+  series.forEach((point, index) => {
+    context.fillStyle = isAccented(point) ? accentColor : '#5b6475';
+    context.fillText(axisLabel(point), groupCenter(index), height - 14);
+  });
+  context.textAlign = 'left';
+
+  const groupSpan = keys.length * barWidth + (keys.length - 1) * barGap;
+  keys.forEach((key, keyIndex) => {
+    series.forEach((point, index) => {
+      const x = groupCenter(index) - groupSpan / 2 + keyIndex * (barWidth + barGap);
+      const y = yFor(point[key]);
+      const barHeight = Math.max(0, baselineY - y);
+      const radius = Math.min(4, barWidth / 2, barHeight);
+      context.fillStyle = colors[keyIndex];
+      context.globalAlpha = isAccented(point) ? 0.45 : 1;
+      context.beginPath();
+      if (typeof context.roundRect === 'function') {
+        context.roundRect(x, y, barWidth, barHeight, [radius, radius, 0, 0]);
+      } else {
+        context.rect(x, y, barWidth, barHeight);
+      }
+      context.fill();
+    });
+  });
+  context.globalAlpha = 1;
+
+  if (options.pointLabels) {
+    context.font = '600 11px system-ui, sans-serif';
+    context.textAlign = 'center';
+    series.forEach((point, index) => {
+      const labelYs = [];
+      keys.forEach((key, keyIndex) => {
+        const x = groupCenter(index) - groupSpan / 2 + keyIndex * (barWidth + barGap) + barWidth / 2;
+        let y = yFor(point[key]) - 6;
+        // Nudge upward when this label would sit on top of a neighbor's.
+        while (labelYs.some((other) => Math.abs(other - y) < 12)) {
+          y -= 12;
+        }
+        labelYs.push(y);
+        context.fillStyle = '#253044';
+        context.fillText(formatter(point[key]), x, Math.max(y, padding.top + 4));
+      });
+    });
+    context.textAlign = 'left';
+  }
+
+  canvas.__chartMeta = {
+    series,
+    keys,
+    colors,
+    formatter,
+    axisLabel,
+    seriesLabels: options.seriesLabels || [],
+    positions: series.map((_, index) => groupCenter(index)),
+    width,
+    height,
+  };
+}
+
 function findNearestChartIndex(meta, offsetX) {
   let nearest = 0;
   let bestDistance = Infinity;
@@ -1066,6 +1253,34 @@ function renderCharts(result, inputs, chartOptions = {}) {
     pointLabels,
     seriesLabels: [translate(language, 'charts.legendSavings')],
   });
+  drawBarChart(getElement('annualOutlayChart'), buildAnnualOutlaySeries(result, inputs.years), ['currentOutlay', 'targetOutlay'], ['#2155d6', '#0f8f5f'], formatValue, {
+    pointLabels,
+    seriesLabels: [
+      inputs.currentPlatform || translate(language, 'charts.legendCurrentOutlay'),
+      inputs.targetPlatform || translate(language, 'charts.legendTargetOutlay'),
+    ],
+  });
+
+  const storedScenarios = loadStoredScenarios()
+    .filter((scenario) => ((scenario.inputs && scenario.inputs.currency) || DEFAULT_INPUTS.currency) === currency)
+    .slice(0, MAX_OVERLAY_SCENARIOS - 1);
+  const overlay = buildScenarioOverlay([
+    { name: translate(language, 'scenarios.current'), inputs },
+    ...storedScenarios,
+  ]);
+  drawChart(getElement('scenarioOverlayChart'), overlay.series, overlay.keys, SCENARIO_COLORS.slice(0, overlay.keys.length), formatValue, {
+    zeroBaseline: true,
+    seriesLabels: overlay.names,
+  });
+
+  const overlayLegend = getElement('scenarioOverlayLegend');
+  if (overlayLegend) {
+    const entries = overlay.names
+      .map((name, index) => `<span><i style="background:${SCENARIO_COLORS[index]}"></i> ${escapeHtml(name)}</span>`)
+      .join('');
+    const emptyHint = storedScenarios.length ? '' : `<span class="overlay-empty">${escapeHtml(translate(language, 'charts.scenarioOverlayEmpty'))}</span>`;
+    overlayLegend.innerHTML = entries + emptyHint;
+  }
 }
 
 function calculateAndRender() {
@@ -1340,6 +1555,8 @@ if (typeof module !== 'undefined') {
     DEFAULT_INPUTS,
     calculateRoi,
     buildChartSeries,
+    buildAnnualOutlaySeries,
+    buildScenarioOverlay,
     buildScenarioComparison,
     computeBreakEvenUnitPrices,
     encodeInputsToQuery,
