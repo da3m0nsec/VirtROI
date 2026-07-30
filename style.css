@@ -379,25 +379,10 @@ select:focus {
   font-weight: 750;
 }
 
-.variance-note {
-  border-color: rgba(33, 85, 214, 0.24);
-  color: var(--brand-dark);
-  background: rgba(33, 85, 214, 0.08);
-}
-
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
-}
-
-.variance-heading {
-  margin: 30px 0 14px;
-}
-
-.variance-heading h3 {
-  font-size: clamp(1.25rem, 2.4vw, 1.6rem);
-  letter-spacing: -0.035em;
 }
 
 .chart-card {
@@ -406,14 +391,6 @@ select:focus {
   border-radius: 22px;
   padding: 18px;
   background: #fbfdff;
-}
-
-.chart-card-wide {
-  grid-column: 1 / -1;
-}
-
-.chart-card-wide canvas {
-  height: 340px;
 }
 
 .chart-expand {
@@ -499,32 +476,6 @@ body.has-fullscreen-chart .panel {
   width: 9px;
   height: 9px;
   border-radius: 999px;
-}
-
-.break-even-strip {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.break-even-tile {
-  display: grid;
-  gap: 6px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 14px 16px;
-  background: var(--surface-muted);
-}
-
-.break-even-tile strong {
-  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
-  letter-spacing: -0.045em;
-}
-
-.break-even-tile small {
-  color: var(--muted);
-  line-height: 1.45;
 }
 
 .chart-heading p {
@@ -737,13 +688,8 @@ canvas {
   .input-grid.compact,
   .result-grid,
   .report-metrics,
-  .formula-grid,
-  .break-even-strip {
+  .formula-grid {
     grid-template-columns: 1fr;
-  }
-
-  .chart-card-wide canvas {
-    height: 280px;
   }
 
   .chart-card.chart-fullscreen canvas {

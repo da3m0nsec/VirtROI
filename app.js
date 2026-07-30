@@ -43,8 +43,6 @@ const COST_PERIOD_OPTIONS = [
   { code: 'total', labelKey: 'options.costPeriodTotal' },
 ];
 
-const PRICE_IMPACT_STEPS_PERCENT = [-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50];
-
 let translationsCache = null;
 
 function loadTranslations() {
@@ -234,53 +232,6 @@ function buildChartSeries(result, years, extraProjectionYears = 2) {
   return points;
 }
 
-function buildPriceImpactSeries(result, years, variancePercents = PRICE_IMPACT_STEPS_PERCENT) {
-  const analysisYears = Math.max(1, Math.round(toFiniteNumber(years, DEFAULT_INPUTS.years)));
-  const oneTimeCosts = toFiniteNumber(result.oneTimeCosts ?? result.migrationCost);
-  const currentAnnualCost = toFiniteNumber(result.currentAnnualCost);
-  const targetAnnualCost = toFiniteNumber(result.targetAnnualCost);
-  const currentLicenseAnnualCost = toFiniteNumber(result.currentLicenseAnnualCost);
-  const targetLicenseAnnualCost = toFiniteNumber(result.targetLicenseAnnualCost);
-  const currentAdditionalAnnualCost = currentAnnualCost - currentLicenseAnnualCost;
-  const targetAdditionalAnnualCost = targetAnnualCost - targetLicenseAnnualCost;
-  const netSavingsFor = (current, target) => roundTo((current - target) * analysisYears - oneTimeCosts, 2);
-  const roiFor = (netSavings) => (oneTimeCosts > 0 ? roundTo((netSavings / oneTimeCosts) * 100, 2) : null);
-
-  return variancePercents.map((variancePercent) => {
-    const factor = 1 + toFiniteNumber(variancePercent) / 100;
-    const currentPriceNetSavings = netSavingsFor(currentLicenseAnnualCost * factor + currentAdditionalAnnualCost, targetAnnualCost);
-    const targetPriceNetSavings = netSavingsFor(currentAnnualCost, targetLicenseAnnualCost * factor + targetAdditionalAnnualCost);
-    return {
-      variancePercent,
-      currentPriceNetSavings,
-      targetPriceNetSavings,
-      currentPriceRoi: roiFor(currentPriceNetSavings),
-      targetPriceRoi: roiFor(targetPriceNetSavings),
-      baseline: toFiniteNumber(variancePercent) === 0,
-    };
-  });
-}
-
-function computeBreakEvenThresholds(result, years) {
-  const analysisYears = Math.max(1, Math.round(toFiniteNumber(years, DEFAULT_INPUTS.years)));
-  const oneTimeCosts = toFiniteNumber(result.oneTimeCosts ?? result.migrationCost);
-  const currentAnnualCost = toFiniteNumber(result.currentAnnualCost);
-  const targetAnnualCost = toFiniteNumber(result.targetAnnualCost);
-  const currentLicenseAnnualCost = toFiniteNumber(result.currentLicenseAnnualCost);
-  const targetLicenseAnnualCost = toFiniteNumber(result.targetLicenseAnnualCost);
-  const currentAdditionalAnnualCost = currentAnnualCost - currentLicenseAnnualCost;
-  const targetAdditionalAnnualCost = targetAnnualCost - targetLicenseAnnualCost;
-
-  const currentPricePercent = currentLicenseAnnualCost > 0
-    ? roundTo((((targetAnnualCost * analysisYears + oneTimeCosts - currentAdditionalAnnualCost * analysisYears) / (currentLicenseAnnualCost * analysisYears)) - 1) * 100, 1)
-    : null;
-  const targetPricePercent = targetLicenseAnnualCost > 0
-    ? roundTo((((currentAnnualCost * analysisYears - oneTimeCosts - targetAdditionalAnnualCost * analysisYears) / (targetLicenseAnnualCost * analysisYears)) - 1) * 100, 1)
-    : null;
-
-  return { currentPricePercent, targetPricePercent };
-}
-
 function getDecision(result) {
   if (result.annualSavings > 0 && result.paybackYears !== null && result.paybackYears <= 1) {
     return {
@@ -365,7 +316,7 @@ function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_IN
         }),
       },
     ],
-    chartSlots: ['costChart', 'savingsChart', 'priceImpactChart'],
+    chartSlots: ['costChart', 'savingsChart'],
   };
 }
 
@@ -669,7 +620,6 @@ function downloadGraphsAsPng() {
   const charts = [
     { title: translate(language, 'charts.costTitle'), canvas: getElement('costChart') },
     { title: translate(language, 'charts.netSavingsTitle'), canvas: getElement('savingsChart') },
-    { title: translate(language, 'charts.priceImpactTitle'), canvas: getElement('priceImpactChart') },
   ].filter((chart) => chart.canvas);
   if (!charts.length || typeof document === 'undefined') return;
 
@@ -765,11 +715,6 @@ function drawChartSegment(context, from, to, dashed) {
 
 function formatYearAxisLabel(point) {
   return `Y${point.year}${point.projected ? '*' : ''}`;
-}
-
-function formatVarianceAxisLabel(point) {
-  const percent = toFiniteNumber(point.variancePercent);
-  return `${percent > 0 ? '+' : ''}${percent}%`;
 }
 
 function drawChart(canvas, series, keys, colors, formatter, options = {}) {
@@ -950,28 +895,11 @@ function attachChartHover(canvas) {
   canvas.addEventListener('pointercancel', hideTooltip);
 }
 
-function formatSignedPercent(value, language = 'en') {
-  if (value === null || value === undefined || !Number.isFinite(value)) {
-    return translate(language, 'format.notAvailable');
-  }
-  const rounded = roundTo(value, 1);
-  return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('en-US')}%`;
-}
-
-function renderBreakEvenTiles(result, inputs, language) {
-  const thresholds = computeBreakEvenThresholds(result, inputs.years);
-  setText('breakEvenCurrentValue', formatSignedPercent(thresholds.currentPricePercent, language));
-  setText('breakEvenTargetValue', formatSignedPercent(thresholds.targetPricePercent, language));
-}
-
 function renderCharts(result, inputs) {
   const series = buildChartSeries(result, inputs.years);
   const language = getCurrentLanguage();
   const currency = inputs.currency || getCurrentCurrency();
   const formatValue = (value) => formatCurrency(value, currency);
-  const useRoi = toFiniteNumber(result.oneTimeCosts) > 0;
-  const priceImpactKeys = useRoi ? ['currentPriceRoi', 'targetPriceRoi'] : ['currentPriceNetSavings', 'targetPriceNetSavings'];
-  const priceImpactFormatter = useRoi ? (value) => formatPercent(value, language) : formatValue;
 
   drawChart(getElement('costChart'), series, ['currentCost', 'targetCost'], ['#2155d6', '#0f8f5f'], formatValue, {
     seriesLabels: [
@@ -982,24 +910,6 @@ function renderCharts(result, inputs) {
   drawChart(getElement('savingsChart'), series, ['netSavings'], ['#7c3aed'], formatValue, {
     seriesLabels: [translate(language, 'charts.legendSavings')],
   });
-  drawChart(
-    getElement('priceImpactChart'),
-    buildPriceImpactSeries(result, inputs.years),
-    priceImpactKeys,
-    ['#2155d6', '#0f8f5f'],
-    priceImpactFormatter,
-    {
-      axisLabel: formatVarianceAxisLabel,
-      accent: (point) => Boolean(point.baseline),
-      accentColor: '#111827',
-      zeroBaseline: true,
-      seriesLabels: [
-        translate(language, 'charts.legendCurrentPrice'),
-        translate(language, 'charts.legendTargetPrice'),
-      ],
-    },
-  );
-  renderBreakEvenTiles(result, inputs, language);
 }
 
 function calculateAndRender() {
@@ -1123,10 +1033,6 @@ if (typeof module !== 'undefined') {
     DEFAULT_INPUTS,
     calculateRoi,
     buildChartSeries,
-    buildPriceImpactSeries,
-    computeBreakEvenThresholds,
-    formatSignedPercent,
-    formatVarianceAxisLabel,
     getDecision,
     formatCurrency,
     getCurrencyOptions,

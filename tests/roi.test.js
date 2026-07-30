@@ -6,10 +6,6 @@ const path = require('node:path');
 const {
   calculateRoi,
   buildChartSeries,
-  buildPriceImpactSeries,
-  computeBreakEvenThresholds,
-  formatSignedPercent,
-  formatVarianceAxisLabel,
   getDecision,
   formatCurrency,
   formatYears,
@@ -178,105 +174,15 @@ test('buildChartSeries projects the selected period plus two extra scenario year
   ]);
 });
 
-test('buildPriceImpactSeries maps price changes from -50% to +50% onto ROI, one side at a time', () => {
-  const result = calculateRoi({
-    inputMode: 'topology',
-    hosts: 10,
-    socketsPerHost: 2,
-    coresPerSocket: 24,
-    currentPricingMetric: 'core',
-    targetPricingMetric: 'socket',
-    currentUnitPricePerYear: 400,
-    targetUnitPricePerYear: 4500,
-    migrationCost: 40000,
-    years: 3,
-  });
-
-  const series = buildPriceImpactSeries(result, 3);
-
-  assert.deepEqual(series.map((point) => point.variancePercent), [-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50]);
-  assert.deepEqual(series.map((point) => point.baseline), series.map((point) => point.variancePercent === 0));
-
-  const baselinePoint = series.find((point) => point.baseline);
-  assert.equal(baselinePoint.currentPriceRoi, result.roiPercent);
-  assert.equal(baselinePoint.targetPriceRoi, result.roiPercent);
-  assert.equal(baselinePoint.currentPriceNetSavings, result.netSavingsAfterMigration);
-
-  // Target license 90,000/year: +10% removes 9,000/year of savings over 3 years → 27,000 less net savings, 67.5 ROI points.
-  const plusTen = series.find((point) => point.variancePercent === 10);
-  assert.equal(plusTen.targetPriceNetSavings, 266000 - 9000 * 3);
-  assert.equal(plusTen.targetPriceRoi, 665 - 67.5);
-  // Current license 192,000/year: +10% adds 19,200/year of savings over 3 years.
-  assert.equal(plusTen.currentPriceNetSavings, 266000 + 19200 * 3);
-});
-
-test('buildPriceImpactSeries reports no ROI when there are no one-time costs', () => {
-  const result = calculateRoi({
-    inputMode: 'topology',
-    hosts: 10,
-    socketsPerHost: 2,
-    coresPerSocket: 24,
-    currentPricingMetric: 'core',
-    targetPricingMetric: 'socket',
-    currentUnitPricePerYear: 400,
-    targetUnitPricePerYear: 4500,
-    migrationCost: 0,
-    years: 3,
-  });
-
-  const series = buildPriceImpactSeries(result, 3);
-  assert.ok(series.every((point) => point.currentPriceRoi === null && point.targetPriceRoi === null));
-  assert.equal(series.find((point) => point.baseline).currentPriceNetSavings, result.netSavingsAfterMigration);
-});
-
-test('computeBreakEvenThresholds solves the price change that zeroes net savings for each side', () => {
-  const result = calculateRoi({
-    inputMode: 'topology',
-    hosts: 10,
-    socketsPerHost: 2,
-    coresPerSocket: 24,
-    currentPricingMetric: 'core',
-    targetPricingMetric: 'socket',
-    currentUnitPricePerYear: 400,
-    targetUnitPricePerYear: 4500,
-    migrationCost: 40000,
-    years: 3,
-  });
-
-  const thresholds = computeBreakEvenThresholds(result, 3);
-
-  // Target side: 90,000 × f × 3 = 192,000 × 3 − 40,000 → f ≈ 1.985.
-  assert.equal(thresholds.targetPricePercent, 98.5);
-  // Current side: 192,000 × f × 3 = 90,000 × 3 + 40,000 → f ≈ 0.538.
-  assert.equal(thresholds.currentPricePercent, -46.2);
-
-  // A break-even priced scenario nets ~zero savings.
-  const factor = 1 + thresholds.targetPricePercent / 100;
-  const netAtBreakEven = (result.currentAnnualCost - result.targetLicenseAnnualCost * factor) * 3 - result.oneTimeCosts;
-  assert.ok(Math.abs(netAtBreakEven) < 2000);
-});
-
-test('price impact axis labels and thresholds are signed percentages', () => {
-  assert.equal(formatVarianceAxisLabel({ variancePercent: -30 }), '-30%');
-  assert.equal(formatVarianceAxisLabel({ variancePercent: 0 }), '0%');
-  assert.equal(formatVarianceAxisLabel({ variancePercent: 30 }), '+30%');
-  assert.equal(formatSignedPercent(98.5), '+98.5%');
-  assert.equal(formatSignedPercent(-46.2), '-46.2%');
-  assert.equal(formatSignedPercent(null), 'N/A');
-});
-
-test('the price impact chart replaces the variance charts and ships break-even tiles and fullscreen buttons', () => {
+test('the charts tab ships only the cost and savings charts, each with a fullscreen button', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
-  assert.ok(html.includes('id="priceImpactChart"'));
+  assert.ok(html.includes('id="costChart"'));
+  assert.ok(html.includes('id="savingsChart"'));
+  assert.equal(html.includes('id="priceImpactChart"'), false);
   assert.equal(html.includes('id="priceVarianceChart"'), false);
   assert.equal(html.includes('id="sizingVarianceChart"'), false);
-  assert.ok(html.indexOf('id="priceImpactChart"') > html.indexOf('id="savingsChart"'));
-  assert.ok(html.includes('data-i18n="charts.legendCurrentPrice"'));
-  assert.ok(html.includes('data-i18n="charts.legendTargetPrice"'));
-  assert.ok(html.includes('id="breakEvenTargetValue"'));
-  assert.ok(html.includes('id="breakEvenCurrentValue"'));
-  assert.ok((html.match(/class="chart-expand"/g) || []).length >= 3);
+  assert.equal((html.match(/class="chart-expand"/g) || []).length, 2);
 });
 
 test('getDecision labels strong, evaluation, and weak cases', () => {
@@ -332,7 +238,7 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.equal(report.title, 'VirtROI report');
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
-  assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart', 'priceImpactChart']);
+  assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart']);
 });
 
 test('report export controls include HTML and graph PNG downloads with stable filenames', () => {

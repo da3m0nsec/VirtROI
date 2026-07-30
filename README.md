@@ -19,7 +19,6 @@ VirtROI estimates:
 - ROI percentage
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
 - dynamic charts for cumulative cost and net savings over time, including two extra projected scenario years
-- a price sensitivity chart showing how ROI reacts when the current or target license price moves by up to ±50%, with computed break-even thresholds
 - hover tooltips on every chart and a full-screen mode that stays responsive on mobile and vertical screens
 - currency output in USD, EUR, GBP, JPY, or BRL
 - recurring cost inputs as annualized amounts or totals for the selected analysis period
@@ -140,18 +139,7 @@ The **Dynamic charts** tab renders browser-native canvas charts without external
 
 Charts update automatically when any input changes. The x-axis marks projected years with `*`, so a 3-year analysis also shows years 4 and 5 as forward-looking scenario points.
 
-### Price sensitivity
-
-A dedicated chart answers "how much would a price change affect the operation?". It plots **ROI over the analysis period** across a −50% to +50% license price range, varying **one side of the comparison at a time**, so the blue and green lines are independent scenarios rather than a combined one. The `0%` point is your current scenario, and a horizontal reference line marks break-even. When there are no one-time costs (so ROI is undefined), the chart falls back to net savings.
-
-Two tiles below the chart state the break-even thresholds directly:
-
-- **Target price headroom**: how far the target license price can move before net savings hit zero — the discount cushion or uplift tolerance you have when negotiating the target quote.
-- **Current price break-even**: the current-platform price level at which switching stops paying off — useful to test whether the case survives a renewal discount from the incumbent.
-
-Add-on and one-time costs stay fixed while prices move, because a price renegotiation does not change how much capacity you consume. Hovering any chart shows exact values, and every chart card has a **Full screen** button (Escape closes it) that keeps working on mobile and vertical screens.
-
-The chart is included in the report snapshots and in the graphs PNG download.
+Hovering any chart shows exact values, and every chart card has a **Full screen** button (Escape closes it) that keeps working on mobile and vertical screens.
 
 ## Editable PDF report
 
@@ -203,10 +191,6 @@ Payback years = one-time costs / annual savings
 Net savings = annual savings × years - one-time costs
 ROI % = net savings / one-time costs × 100
 
-Price factor = 1 + price change % / 100
-Adjusted annual cost = license annual cost × price factor + additional annual costs
-Price impact ROI % = ((adjusted-side annual cost difference) × years - one-time costs) / one-time costs × 100
-Break-even price change = the price factor that makes net savings over the period equal zero, solved per side
 ```
 
 If annual savings are zero or negative, VirtROI reports `No payback` instead of a misleading payback period.
