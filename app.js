@@ -583,13 +583,14 @@ function generateReport() {
 
   const inputs = getInputs();
   const result = calculateRoi(inputs);
-  renderCharts(result, inputs);
+  renderCharts(result, inputs, { pointLabels: true });
   const language = getCurrentLanguage();
   const currency = inputs.currency || getCurrentCurrency();
   const report = buildReportModel(inputs, result, language, currency);
   const chartFigures = report.chartSlots
     .map((slot) => ({ title: slot.title, image: getChartImage(slot.id) }))
     .filter((figure) => figure.image);
+  renderCharts(result, inputs);
   const hasProjectedRows = report.yearlyRows.some((row) => row.projected);
 
   reportBody.innerHTML = `
@@ -613,7 +614,7 @@ function generateReport() {
               <tr>
                 <th>${escapeHtml(translate(language, 'report.col.year'))}</th>
                 <th>${escapeHtml(translate(language, 'report.col.cumulative', { platform: inputs.currentPlatform }))}</th>
-                <th>${escapeHtml(translate(language, 'report.col.cumulative', { platform: inputs.targetPlatform }))}</th>
+                <th>${escapeHtml(translate(language, 'report.col.cumulativeTarget', { platform: inputs.targetPlatform }))}</th>
                 <th>${escapeHtml(translate(language, 'report.col.netSavings'))}</th>
               </tr>
             </thead>
@@ -699,7 +700,8 @@ function downloadReportAsHtml() {
     .report-chart-grid img { width: 100%; border: 1px solid #d9e1ef; border-radius: 16px; }
     .report-table-wrap { overflow-x: auto; }
     .report-year-table { width: 100%; border-collapse: collapse; }
-    .report-year-table th, .report-year-table td { border-bottom: 1px solid #d9e1ef; padding: 9px 12px; text-align: right; white-space: nowrap; }
+    .report-year-table th, .report-year-table td { border-bottom: 1px solid #d9e1ef; padding: 9px 12px; text-align: right; }
+    .report-year-table td { white-space: nowrap; }
     .report-year-table th:first-child, .report-year-table td:first-child { text-align: left; }
     .report-year-table th { color: #5b6475; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
     .report-year-table tr.projected td { color: #8a5a12; }
@@ -735,7 +737,7 @@ function downloadCanvasAsPng(canvas, filename) {
 function downloadGraphsAsPng() {
   const inputs = getInputs();
   const result = calculateRoi(inputs);
-  renderCharts(result, inputs);
+  renderCharts(result, inputs, { pointLabels: true });
 
   const language = getCurrentLanguage();
   const charts = [
@@ -772,6 +774,7 @@ function downloadGraphsAsPng() {
   });
 
   downloadCanvasAsPng(combined, buildDownloadFilename('virtroi-graphs', 'png'));
+  renderCharts(result, inputs);
 }
 
 function exportReportToPdf() {
@@ -951,6 +954,23 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
     });
   });
 
+  if (options.pointLabels) {
+    context.font = '600 11px system-ui, sans-serif';
+    keys.forEach((key, keyIndex) => {
+      // First series labels sit above their points, second below, so labels
+      // stay readable where the lines run close or cross.
+      const offset = keyIndex === 0 ? -9 : 19;
+      series.forEach((point, index) => {
+        const x = xFor(index);
+        const y = Math.min(Math.max(yFor(point[key]) + offset, padding.top + 4), height - padding.bottom + 12);
+        context.textAlign = index === 0 ? 'left' : index === series.length - 1 ? 'right' : 'center';
+        context.fillStyle = '#253044';
+        context.fillText(formatter(point[key]), x, y);
+      });
+    });
+    context.textAlign = 'left';
+  }
+
   canvas.__chartMeta = {
     series,
     keys,
@@ -1028,19 +1048,22 @@ function attachChartHover(canvas) {
   canvas.addEventListener('pointercancel', hideTooltip);
 }
 
-function renderCharts(result, inputs) {
+function renderCharts(result, inputs, chartOptions = {}) {
   const series = buildChartSeries(result, inputs.years);
   const language = getCurrentLanguage();
   const currency = inputs.currency || getCurrentCurrency();
   const formatValue = (value) => formatCurrency(value, currency);
+  const pointLabels = Boolean(chartOptions.pointLabels);
 
   drawChart(getElement('costChart'), series, ['currentCost', 'targetCost'], ['#2155d6', '#0f8f5f'], formatValue, {
+    pointLabels,
     seriesLabels: [
       inputs.currentPlatform || translate(language, 'charts.legendCurrent'),
       inputs.targetPlatform || translate(language, 'charts.legendTarget'),
     ],
   });
   drawChart(getElement('savingsChart'), series, ['netSavings'], ['#7c3aed'], formatValue, {
+    pointLabels,
     seriesLabels: [translate(language, 'charts.legendSavings')],
   });
 }

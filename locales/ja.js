@@ -126,6 +126,7 @@
   "page.title": "VirtROI | Virtualization ROI Calculator",
   "report.chartsHeading": "Charts",
   "report.col.cumulative": "{platform} の累計コスト",
+  "report.col.cumulativeTarget": "{platform} の累計コスト(一時コスト込み)",
   "report.col.netSavings": "純削減額",
   "report.col.year": "年",
   "report.copy": "現在の数値とチャート画像を含む編集可能なレポートを作成し、ブラウザの印刷機能でPDFに出力します。",

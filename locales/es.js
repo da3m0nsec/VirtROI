@@ -126,6 +126,7 @@
   "page.title": "VirtROI | Calculadora ROI de virtualización",
   "report.chartsHeading": "Gráficos",
   "report.col.cumulative": "Coste acumulado de {platform}",
+  "report.col.cumulativeTarget": "Coste acumulado de {platform} (incl. costes one-time)",
   "report.col.netSavings": "Ahorro neto",
   "report.col.year": "Año",
   "report.copy": "Crea un informe editable con las cifras actuales e imágenes de los gráficos, y expórtalo a PDF desde el diálogo de impresión del navegador.",

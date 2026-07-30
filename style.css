@@ -730,6 +730,9 @@ canvas {
   border-bottom: 1px solid var(--border);
   padding: 9px 12px;
   text-align: right;
+}
+
+.report-year-table td {
   white-space: nowrap;
 }
 

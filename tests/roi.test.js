@@ -375,6 +375,9 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.equal(report.yearlyRows[3].projected, false);
   assert.equal(report.yearlyRows[3].netSavings, 251000);
   assert.equal(report.yearlyRows.at(-1).projected, true);
+
+  // The target column header states that one-time costs are included.
+  assert.match(translate('en', 'report.col.cumulativeTarget', { platform: 'Product B' }), /Product B.*one-time/);
 });
 
 test('report export controls include HTML and graph PNG downloads with stable filenames', () => {
