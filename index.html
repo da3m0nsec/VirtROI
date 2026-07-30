@@ -260,6 +260,7 @@
               <h3 data-i18n="charts.costTitle">Cumulative cost</h3>
               <p data-i18n="charts.costDescription">Current platform vs target platform including one-time costs.</p>
             </div>
+            <button class="chart-expand" type="button" aria-expanded="false" data-i18n="charts.expand">Full screen</button>
             <canvas id="costChart" aria-label="Cumulative cost chart" data-i18n-attr="aria-label:charts.costAria" role="img"></canvas>
             <div class="legend">
               <span><i class="legend-current"></i> <span data-i18n="charts.legendCurrent">Current</span></span>
@@ -272,6 +273,7 @@
               <h3 data-i18n="charts.netSavingsTitle">Net savings</h3>
               <p data-i18n="charts.netSavingsDescription">Positive values mean the target platform has recovered one-time costs and is saving money.</p>
             </div>
+            <button class="chart-expand" type="button" aria-expanded="false" data-i18n="charts.expand">Full screen</button>
             <canvas id="savingsChart" aria-label="Net savings chart" data-i18n-attr="aria-label:charts.savingsAria" role="img"></canvas>
             <div class="legend">
               <span><i class="legend-savings"></i> <span data-i18n="charts.legendSavings">Net savings</span></span>
@@ -280,34 +282,35 @@
         </div>
 
         <div class="section-heading variance-heading">
-          <h3 data-i18n="charts.varianceTitle">Percentage variance scenarios</h3>
-          <p data-i18n="charts.varianceCopy">Net savings over the analysis period when the current or the target side moves by a percentage, one side at a time.</p>
+          <h3 data-i18n="charts.priceImpactHeading">Price sensitivity</h3>
+          <p data-i18n="charts.priceImpactCopy">How much a price change on either side of the comparison moves the return of the operation, and how far prices can move before the case breaks even.</p>
         </div>
 
-        <p class="projection-note variance-note" data-i18n="charts.varianceNote">Each line varies a single side of the comparison. 0% is your current scenario.</p>
+        <p class="projection-note variance-note" data-i18n="charts.priceImpactNote">Each line changes one platform's license price at a time. 0% is your current scenario; the horizontal line marks break-even.</p>
 
         <div class="chart-grid">
-          <article class="chart-card">
+          <article class="chart-card chart-card-wide">
             <div class="chart-heading">
-              <h3 data-i18n="charts.priceVarianceTitle">Pricing variance</h3>
-              <p data-i18n="charts.priceVarianceDescription">Unit price moves by a percentage. Add-on and one-time costs stay fixed.</p>
+              <h3 data-i18n="charts.priceImpactTitle">Price impact on ROI</h3>
+              <p data-i18n="charts.priceImpactDescription">ROI over the analysis period when the current or the target license price moves from -50% to +50%. Add-on and one-time costs stay fixed.</p>
             </div>
-            <canvas id="priceVarianceChart" aria-label="Pricing variance chart" data-i18n-attr="aria-label:charts.priceVarianceAria" role="img"></canvas>
+            <button class="chart-expand" type="button" aria-expanded="false" data-i18n="charts.expand">Full screen</button>
+            <canvas id="priceImpactChart" aria-label="Price impact on ROI chart" data-i18n-attr="aria-label:charts.priceImpactAria" role="img"></canvas>
             <div class="legend">
-              <span><i class="legend-current"></i> <span data-i18n="charts.legendCurrentVariance">Current price varies</span></span>
-              <span><i class="legend-target"></i> <span data-i18n="charts.legendTargetVariance">Target price varies</span></span>
+              <span><i class="legend-current"></i> <span data-i18n="charts.legendCurrentPrice">Current platform price changes</span></span>
+              <span><i class="legend-target"></i> <span data-i18n="charts.legendTargetPrice">Target platform price changes</span></span>
             </div>
-          </article>
-
-          <article class="chart-card">
-            <div class="chart-heading">
-              <h3 data-i18n="charts.sizingVarianceTitle">Sizing variance</h3>
-              <p data-i18n="charts.sizingVarianceDescription">Capacity moves by a percentage, scaling licenses and capacity-driven add-ons together.</p>
-            </div>
-            <canvas id="sizingVarianceChart" aria-label="Sizing variance chart" data-i18n-attr="aria-label:charts.sizingVarianceAria" role="img"></canvas>
-            <div class="legend">
-              <span><i class="legend-current"></i> <span data-i18n="charts.legendCurrentSizing">Current sizing varies</span></span>
-              <span><i class="legend-target"></i> <span data-i18n="charts.legendTargetSizing">Target sizing varies</span></span>
+            <div class="break-even-strip">
+              <div class="break-even-tile">
+                <span class="metric-label" data-i18n="charts.breakEvenTarget">Target price headroom</span>
+                <strong id="breakEvenTargetValue">+98.5%</strong>
+                <small data-i18n="charts.breakEvenTargetHelp">The target license price can move up to this much before net savings hit zero.</small>
+              </div>
+              <div class="break-even-tile">
+                <span class="metric-label" data-i18n="charts.breakEvenCurrent">Current price break-even</span>
+                <strong id="breakEvenCurrentValue">-46.2%</strong>
+                <small data-i18n="charts.breakEvenCurrentHelp">If the current license price moves to this level, switching stops paying off.</small>
+              </div>
             </div>
           </article>
         </div>
@@ -349,8 +352,8 @@
         <div><dt data-i18n="formulas.paybackYears.title">Payback years</dt><dd data-i18n="formulas.paybackYears.description">one-time costs ÷ annual savings</dd></div>
         <div><dt data-i18n="formulas.netSavings.title">Net savings</dt><dd data-i18n="formulas.netSavings.description">annual savings × years − one-time costs</dd></div>
         <div><dt data-i18n="formulas.roi.title">ROI %</dt><dd data-i18n="formulas.roi.description">net savings ÷ one-time costs × 100</dd></div>
-        <div><dt data-i18n="formulas.priceVariance.title">Pricing variance</dt><dd data-i18n="formulas.priceVariance.description">net savings recalculated with one side's license cost × (1 + variance %); add-ons and one-time costs unchanged</dd></div>
-        <div><dt data-i18n="formulas.sizingVariance.title">Sizing variance</dt><dd data-i18n="formulas.sizingVariance.description">net savings recalculated with one side's license and additional annual costs × (1 + variance %); one-time costs unchanged</dd></div>
+        <div><dt data-i18n="formulas.priceImpact.title">Price impact on ROI</dt><dd data-i18n="formulas.priceImpact.description">ROI recalculated with one side's license cost × (1 + price change %); add-ons and one-time costs unchanged</dd></div>
+        <div><dt data-i18n="formulas.breakEven.title">Break-even price change</dt><dd data-i18n="formulas.breakEven.description">license price change that makes net savings over the analysis period equal zero, solved for each side separately</dd></div>
       </dl>
     </section>
   </main>

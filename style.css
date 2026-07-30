@@ -401,10 +401,130 @@ select:focus {
 }
 
 .chart-card {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 22px;
   padding: 18px;
   background: #fbfdff;
+}
+
+.chart-card-wide {
+  grid-column: 1 / -1;
+}
+
+.chart-card-wide canvas {
+  height: 340px;
+}
+
+.chart-expand {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: var(--brand);
+  background: var(--surface-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.chart-expand:hover {
+  border-color: var(--brand);
+}
+
+.chart-card .chart-heading {
+  padding-right: 96px;
+}
+
+.chart-card.chart-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  padding: clamp(16px, 3vw, 40px);
+  overflow-y: auto;
+  background: #fbfdff;
+}
+
+.chart-card.chart-fullscreen canvas {
+  height: min(58vh, 640px);
+  flex: none;
+}
+
+body.has-fullscreen-chart {
+  overflow: hidden;
+}
+
+/* backdrop-filter turns .panel into the containing block for position: fixed,
+   which would trap the fullscreen card inside it */
+body.has-fullscreen-chart .panel {
+  backdrop-filter: none;
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 6;
+  display: grid;
+  gap: 4px;
+  max-width: 260px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 12px 30px rgba(27, 39, 70, 0.16);
+  font-size: 0.82rem;
+  pointer-events: none;
+}
+
+.chart-tooltip-title {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.chart-tooltip-row i {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.break-even-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.break-even-tile {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: var(--surface-muted);
+}
+
+.break-even-tile strong {
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  letter-spacing: -0.045em;
+}
+
+.break-even-tile small {
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .chart-heading p {
@@ -617,8 +737,17 @@ canvas {
   .input-grid.compact,
   .result-grid,
   .report-metrics,
-  .formula-grid {
+  .formula-grid,
+  .break-even-strip {
     grid-template-columns: 1fr;
+  }
+
+  .chart-card-wide canvas {
+    height: 280px;
+  }
+
+  .chart-card.chart-fullscreen canvas {
+    height: min(52vh, 480px);
   }
 
   .tabs {

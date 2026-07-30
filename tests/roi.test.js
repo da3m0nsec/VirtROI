@@ -6,7 +6,9 @@ const path = require('node:path');
 const {
   calculateRoi,
   buildChartSeries,
-  buildVarianceSeries,
+  buildPriceImpactSeries,
+  computeBreakEvenThresholds,
+  formatSignedPercent,
   formatVarianceAxisLabel,
   getDecision,
   formatCurrency,
@@ -176,7 +178,7 @@ test('buildChartSeries projects the selected period plus two extra scenario year
   ]);
 });
 
-test('buildVarianceSeries varies one side at a time from -30% to +30% around the current scenario', () => {
+test('buildPriceImpactSeries maps price changes from -50% to +50% onto ROI, one side at a time', () => {
   const result = calculateRoi({
     inputMode: 'topology',
     hosts: 10,
@@ -190,22 +192,25 @@ test('buildVarianceSeries varies one side at a time from -30% to +30% around the
     years: 3,
   });
 
-  const series = buildVarianceSeries(result, 3, 'price');
+  const series = buildPriceImpactSeries(result, 3);
 
-  assert.deepEqual(series.map((point) => point.variancePercent), [-30, -20, -10, 0, 10, 20, 30]);
-  assert.deepEqual(series.map((point) => point.baseline), [false, false, false, true, false, false, false]);
+  assert.deepEqual(series.map((point) => point.variancePercent), [-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50]);
+  assert.deepEqual(series.map((point) => point.baseline), series.map((point) => point.variancePercent === 0));
 
   const baselinePoint = series.find((point) => point.baseline);
-  assert.equal(baselinePoint.currentVarianceNetSavings, result.netSavingsAfterMigration);
-  assert.equal(baselinePoint.targetVarianceNetSavings, result.netSavingsAfterMigration);
+  assert.equal(baselinePoint.currentPriceRoi, result.roiPercent);
+  assert.equal(baselinePoint.targetPriceRoi, result.roiPercent);
+  assert.equal(baselinePoint.currentPriceNetSavings, result.netSavingsAfterMigration);
 
-  // Current license cost 192,000/year: +10% adds 19,200/year over 3 years.
-  assert.equal(series.at(-3).currentVarianceNetSavings, 266000 + 19200 * 3);
-  // Target license cost 90,000/year: +10% removes 9,000/year of savings over 3 years.
-  assert.equal(series.at(-3).targetVarianceNetSavings, 266000 - 9000 * 3);
+  // Target license 90,000/year: +10% removes 9,000/year of savings over 3 years → 27,000 less net savings, 67.5 ROI points.
+  const plusTen = series.find((point) => point.variancePercent === 10);
+  assert.equal(plusTen.targetPriceNetSavings, 266000 - 9000 * 3);
+  assert.equal(plusTen.targetPriceRoi, 665 - 67.5);
+  // Current license 192,000/year: +10% adds 19,200/year of savings over 3 years.
+  assert.equal(plusTen.currentPriceNetSavings, 266000 + 19200 * 3);
 });
 
-test('pricing variance leaves add-ons fixed while sizing variance scales them with capacity', () => {
+test('buildPriceImpactSeries reports no ROI when there are no one-time costs', () => {
   const result = calculateRoi({
     inputMode: 'topology',
     hosts: 10,
@@ -215,38 +220,63 @@ test('pricing variance leaves add-ons fixed while sizing variance scales them wi
     targetPricingMetric: 'socket',
     currentUnitPricePerYear: 400,
     targetUnitPricePerYear: 4500,
-    currentAdditionalAnnualCost: 20000,
-    targetAdditionalAnnualCost: 10000,
+    migrationCost: 0,
+    years: 3,
+  });
+
+  const series = buildPriceImpactSeries(result, 3);
+  assert.ok(series.every((point) => point.currentPriceRoi === null && point.targetPriceRoi === null));
+  assert.equal(series.find((point) => point.baseline).currentPriceNetSavings, result.netSavingsAfterMigration);
+});
+
+test('computeBreakEvenThresholds solves the price change that zeroes net savings for each side', () => {
+  const result = calculateRoi({
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
     migrationCost: 40000,
     years: 3,
   });
 
-  const priceSeries = buildVarianceSeries(result, 3, 'price', [10]);
-  const sizingSeries = buildVarianceSeries(result, 3, 'sizing', [10]);
-  const baseNetSavings = result.netSavingsAfterMigration;
+  const thresholds = computeBreakEvenThresholds(result, 3);
 
-  // Price variance only moves the 192,000 license cost.
-  assert.equal(priceSeries[0].currentVarianceNetSavings, baseNetSavings + 19200 * 3);
-  // Sizing variance also moves the 20,000 capacity-driven add-ons.
-  assert.equal(sizingSeries[0].currentVarianceNetSavings, baseNetSavings + (19200 + 2000) * 3);
-  assert.equal(priceSeries[0].targetVarianceNetSavings, baseNetSavings - 9000 * 3);
-  assert.equal(sizingSeries[0].targetVarianceNetSavings, baseNetSavings - (9000 + 1000) * 3);
+  // Target side: 90,000 × f × 3 = 192,000 × 3 − 40,000 → f ≈ 1.985.
+  assert.equal(thresholds.targetPricePercent, 98.5);
+  // Current side: 192,000 × f × 3 = 90,000 × 3 + 40,000 → f ≈ 0.538.
+  assert.equal(thresholds.currentPricePercent, -46.2);
+
+  // A break-even priced scenario nets ~zero savings.
+  const factor = 1 + thresholds.targetPricePercent / 100;
+  const netAtBreakEven = (result.currentAnnualCost - result.targetLicenseAnnualCost * factor) * 3 - result.oneTimeCosts;
+  assert.ok(Math.abs(netAtBreakEven) < 2000);
 });
 
-test('variance axis labels are signed percentages', () => {
+test('price impact axis labels and thresholds are signed percentages', () => {
   assert.equal(formatVarianceAxisLabel({ variancePercent: -30 }), '-30%');
   assert.equal(formatVarianceAxisLabel({ variancePercent: 0 }), '0%');
   assert.equal(formatVarianceAxisLabel({ variancePercent: 30 }), '+30%');
+  assert.equal(formatSignedPercent(98.5), '+98.5%');
+  assert.equal(formatSignedPercent(-46.2), '-46.2%');
+  assert.equal(formatSignedPercent(null), 'N/A');
 });
 
-test('variance charts are rendered in the charts tab with their own legends', () => {
+test('the price impact chart replaces the variance charts and ships break-even tiles and fullscreen buttons', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
-  assert.ok(html.includes('id="priceVarianceChart"'));
-  assert.ok(html.includes('id="sizingVarianceChart"'));
-  assert.ok(html.indexOf('id="priceVarianceChart"') > html.indexOf('id="savingsChart"'));
-  assert.ok(html.includes('data-i18n="charts.legendCurrentVariance"'));
-  assert.ok(html.includes('data-i18n="charts.legendTargetSizing"'));
+  assert.ok(html.includes('id="priceImpactChart"'));
+  assert.equal(html.includes('id="priceVarianceChart"'), false);
+  assert.equal(html.includes('id="sizingVarianceChart"'), false);
+  assert.ok(html.indexOf('id="priceImpactChart"') > html.indexOf('id="savingsChart"'));
+  assert.ok(html.includes('data-i18n="charts.legendCurrentPrice"'));
+  assert.ok(html.includes('data-i18n="charts.legendTargetPrice"'));
+  assert.ok(html.includes('id="breakEvenTargetValue"'));
+  assert.ok(html.includes('id="breakEvenCurrentValue"'));
+  assert.ok((html.match(/class="chart-expand"/g) || []).length >= 3);
 });
 
 test('getDecision labels strong, evaluation, and weak cases', () => {
@@ -302,7 +332,7 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.equal(report.title, 'VirtROI report');
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
-  assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart', 'priceVarianceChart', 'sizingVarianceChart']);
+  assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart', 'priceImpactChart']);
 });
 
 test('report export controls include HTML and graph PNG downloads with stable filenames', () => {
