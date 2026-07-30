@@ -6,6 +6,10 @@ const path = require('node:path');
 const {
   calculateRoi,
   buildChartSeries,
+  buildScenarioComparison,
+  computeBreakEvenUnitPrices,
+  encodeInputsToQuery,
+  decodeInputsFromQuery,
   getDecision,
   formatCurrency,
   formatYears,
@@ -174,6 +178,127 @@ test('buildChartSeries projects the selected period plus two extra scenario year
   ]);
 });
 
+test('computeBreakEvenUnitPrices converts the break-even point into concrete unit prices', () => {
+  const inputs = {
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    migrationCost: 40000,
+    years: 3,
+  };
+  const result = calculateRoi(inputs);
+  const breakEven = computeBreakEvenUnitPrices(result, inputs);
+
+  // Target: 20 sockets × price × 3y = 192,000 × 3 − 40,000 → $8,933.33/socket/yr.
+  assert.equal(breakEven.targetUnitPrice, 8933.33);
+  // Current: 480 cores × price × 3y = 90,000 × 3 + 40,000 → $215.28/core/yr.
+  assert.equal(breakEven.currentUnitPrice, 215.28);
+});
+
+test('computeBreakEvenUnitPrices returns null when a side has no licensable quantity', () => {
+  const inputs = {
+    inputMode: 'absolute',
+    totalSockets: 0,
+    totalCores: 0,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    migrationCost: 40000,
+    years: 3,
+  };
+  const result = calculateRoi(inputs);
+  const breakEven = computeBreakEvenUnitPrices(result, inputs);
+
+  assert.equal(breakEven.targetUnitPrice, null);
+  assert.equal(breakEven.currentUnitPrice, null);
+});
+
+test('scenario inputs survive an encode/decode round trip through a share URL query', () => {
+  const inputs = {
+    currentPlatform: 'Product A',
+    targetPlatform: 'Product B & C',
+    inputMode: 'absolute',
+    totalSockets: 12,
+    totalCores: 384,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 350.5,
+    targetUnitPricePerYear: 5000,
+    currentAdditionalAnnualCost: 1200,
+    targetAdditionalAnnualCost: 0,
+    migrationCost: 25000,
+    hardwareCost: 5000,
+    renewalCost: 0,
+    years: 4,
+    currency: 'EUR',
+    costInputPeriod: 'annual',
+  };
+
+  const query = encodeInputsToQuery(inputs);
+  const decoded = decodeInputsFromQuery(query);
+
+  assert.equal(decoded.targetPlatform, 'Product B & C');
+  assert.equal(decoded.currentUnitPricePerYear, 350.5);
+  assert.equal(decoded.years, 4);
+  assert.equal(decoded.currency, 'EUR');
+  assert.deepEqual(calculateRoi(decoded), calculateRoi(inputs));
+});
+
+test('decodeInputsFromQuery ignores unknown params and falls back on malformed numbers', () => {
+  const decoded = decodeInputsFromQuery('years=abc&hosts=5&evil=<script>&currency=USD');
+
+  assert.equal(decoded.years, 3);
+  assert.equal(decoded.hosts, 5);
+  assert.equal(decoded.currency, 'USD');
+  assert.equal('evil' in decoded, false);
+});
+
+test('buildScenarioComparison computes comparable metrics and a decision tone per scenario', () => {
+  const strongInputs = {
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    migrationCost: 40000,
+    years: 3,
+  };
+  const weakInputs = { ...strongInputs, targetUnitPricePerYear: 12000, migrationCost: 100000 };
+
+  const rows = buildScenarioComparison([
+    { name: 'Baseline', inputs: strongInputs },
+    { name: 'Expensive target', inputs: weakInputs },
+  ]);
+
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].name, 'Baseline');
+  assert.equal(rows[0].annualSavings, 102000);
+  assert.equal(rows[0].roiPercent, 665);
+  assert.equal(rows[0].tone, 'strong');
+  assert.ok(rows[1].annualSavings < rows[0].annualSavings);
+  assert.equal(rows[1].tone, 'weak');
+});
+
+test('the calculator ships the scenario library and break-even card', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  assert.ok(html.includes('id="scenarioName"'));
+  assert.ok(html.includes('id="saveScenario"'));
+  assert.ok(html.includes('id="shareScenario"'));
+  assert.ok(html.includes('id="scenarioTable"'));
+  assert.ok(html.includes('id="targetBreakEvenPrice"'));
+  assert.ok(html.indexOf('id="scenarioTable"') < html.indexOf('id="charts-panel"'));
+});
+
 test('the charts tab ships only the cost and savings charts, each with a fullscreen button', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
@@ -238,7 +363,18 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.equal(report.title, 'VirtROI report');
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
-  assert.deepEqual(report.chartSlots, ['costChart', 'savingsChart']);
+  assert.deepEqual(report.chartSlots, [
+    { id: 'costChart', title: 'Cumulative cost' },
+    { id: 'savingsChart', title: 'Net savings' },
+  ]);
+
+  // Yearly rows cover year 0 through the analysis period plus two projected years.
+  assert.equal(report.yearlyRows.length, 6);
+  assert.deepEqual(report.yearlyRows[0], { year: 0, projected: false, currentCost: 0, targetCost: 55000, netSavings: -55000 });
+  assert.equal(report.yearlyRows[3].year, 3);
+  assert.equal(report.yearlyRows[3].projected, false);
+  assert.equal(report.yearlyRows[3].netSavings, 251000);
+  assert.equal(report.yearlyRows.at(-1).projected, true);
 });
 
 test('report export controls include HTML and graph PNG downloads with stable filenames', () => {

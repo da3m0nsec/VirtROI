@@ -234,6 +234,12 @@
               <span class="metric-label" data-i18n="metrics.roi">ROI</span>
               <strong id="roiPercent">665%</strong>
             </article>
+
+            <article class="metric-card">
+              <span class="metric-label" data-i18n="metrics.targetBreakEven">Target break-even unit price</span>
+              <strong id="targetBreakEvenPrice">$8,933</strong>
+              <small id="breakEvenContext">Per socket / year, quoted $4,500. Current platform breaks even at $215 per core / year.</small>
+            </article>
           </div>
 
           <div class="capacity-strip" aria-label="Infrastructure capacity summary" data-i18n-attr="aria-label:capacity.aria">
@@ -241,6 +247,23 @@
             <span><strong id="totalSockets">20</strong> <span data-i18n="capacity.totalSockets">total sockets</span></span>
           </div>
         </div>
+      </section>
+
+      <section class="panel scenarios" aria-labelledby="scenarios-title">
+        <div class="section-heading">
+          <p class="eyebrow" data-i18n="scenarios.eyebrow">Scenario library</p>
+          <h2 id="scenarios-title" data-i18n="scenarios.title">Save and compare scenarios</h2>
+          <p data-i18n="scenarios.copy">Snapshot the current inputs under a name, then compare saved scenarios side by side. Scenarios are stored in this browser only.</p>
+        </div>
+        <div class="scenario-controls">
+          <label class="scenario-name">
+            <span data-i18n="scenarios.nameLabel">Scenario name</span>
+            <input id="scenarioName" type="text" autocomplete="off" data-i18n-attr="placeholder:scenarios.namePlaceholder" placeholder="e.g. Renewal quote -20%" />
+          </label>
+          <button id="saveScenario" class="primary-action" type="button" data-i18n="scenarios.save">Save current scenario</button>
+          <button id="shareScenario" class="secondary-action" type="button" data-i18n="scenarios.share">Copy share link</button>
+        </div>
+        <div id="scenarioTable"></div>
       </section>
     </section>
 
@@ -319,6 +342,7 @@
         <div><dt data-i18n="formulas.paybackYears.title">Payback years</dt><dd data-i18n="formulas.paybackYears.description">one-time costs ÷ annual savings</dd></div>
         <div><dt data-i18n="formulas.netSavings.title">Net savings</dt><dd data-i18n="formulas.netSavings.description">annual savings × years − one-time costs</dd></div>
         <div><dt data-i18n="formulas.roi.title">ROI %</dt><dd data-i18n="formulas.roi.description">net savings ÷ one-time costs × 100</dd></div>
+        <div><dt data-i18n="formulas.breakEvenPrice.title">Target break-even unit price</dt><dd data-i18n="formulas.breakEvenPrice.description">(current annual cost − target add-ons) × years − one-time costs, divided by target quantity × years</dd></div>
       </dl>
     </section>
   </main>

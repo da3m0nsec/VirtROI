@@ -43,6 +43,26 @@ const COST_PERIOD_OPTIONS = [
   { code: 'total', labelKey: 'options.costPeriodTotal' },
 ];
 
+const SCENARIO_STORAGE_KEY = 'virtroi.scenarios';
+
+const SHAREABLE_INPUT_KEYS = Object.keys(DEFAULT_INPUTS);
+
+const NUMERIC_INPUT_KEYS = new Set([
+  'hosts',
+  'socketsPerHost',
+  'coresPerSocket',
+  'totalSockets',
+  'totalCores',
+  'currentUnitPricePerYear',
+  'targetUnitPricePerYear',
+  'currentAdditionalAnnualCost',
+  'targetAdditionalAnnualCost',
+  'migrationCost',
+  'hardwareCost',
+  'renewalCost',
+  'years',
+]);
+
 let translationsCache = null;
 
 function loadTranslations() {
@@ -219,7 +239,7 @@ function buildChartSeries(result, years, extraProjectionYears = 2) {
 
   for (let year = 0; year <= horizon; year += 1) {
     const currentCost = result.currentAnnualCost * year;
-    const targetCost = result.targetAnnualCost * year + toFiniteNumber(result.migrationCost);
+    const targetCost = result.targetAnnualCost * year + toFiniteNumber(result.oneTimeCosts ?? result.migrationCost);
     points.push({
       year,
       currentCost,
@@ -230,6 +250,60 @@ function buildChartSeries(result, years, extraProjectionYears = 2) {
   }
 
   return points;
+}
+
+function computeBreakEvenUnitPrices(result, inputs) {
+  const years = Math.max(1, Math.round(toFiniteNumber(inputs.years, DEFAULT_INPUTS.years)));
+  const oneTimeCosts = toFiniteNumber(result.oneTimeCosts ?? result.migrationCost);
+  const currentQuantity = (inputs.currentPricingMetric || DEFAULT_INPUTS.currentPricingMetric) === 'socket' ? result.totalSockets : result.totalCores;
+  const targetQuantity = (inputs.targetPricingMetric || DEFAULT_INPUTS.targetPricingMetric) === 'socket' ? result.totalSockets : result.totalCores;
+  const currentAdditionalAnnualCost = result.currentAnnualCost - result.currentLicenseAnnualCost;
+  const targetAdditionalAnnualCost = result.targetAnnualCost - result.targetLicenseAnnualCost;
+
+  const targetUnitPrice = targetQuantity > 0
+    ? roundTo((result.currentAnnualCost * years - targetAdditionalAnnualCost * years - oneTimeCosts) / (targetQuantity * years), 2)
+    : null;
+  const currentUnitPrice = currentQuantity > 0
+    ? roundTo((result.targetAnnualCost * years + oneTimeCosts - currentAdditionalAnnualCost * years) / (currentQuantity * years), 2)
+    : null;
+
+  return { currentUnitPrice, targetUnitPrice };
+}
+
+function encodeInputsToQuery(inputs) {
+  const params = new URLSearchParams();
+  SHAREABLE_INPUT_KEYS.forEach((key) => {
+    if (inputs[key] !== undefined && inputs[key] !== null && inputs[key] !== '') {
+      params.set(key, String(inputs[key]));
+    }
+  });
+  return params.toString();
+}
+
+function decodeInputsFromQuery(search) {
+  const params = new URLSearchParams(search || '');
+  const inputs = {};
+  SHAREABLE_INPUT_KEYS.forEach((key) => {
+    if (!params.has(key)) return;
+    const raw = params.get(key);
+    inputs[key] = NUMERIC_INPUT_KEYS.has(key) ? toFiniteNumber(raw, DEFAULT_INPUTS[key]) : raw;
+  });
+  return inputs;
+}
+
+function buildScenarioComparison(scenarios) {
+  return scenarios.map((scenario) => {
+    const result = calculateRoi(scenario.inputs || {});
+    const decision = getDecision(result);
+    return {
+      name: scenario.name || '',
+      annualSavings: result.annualSavings,
+      paybackYears: result.paybackYears,
+      netSavingsAfterMigration: result.netSavingsAfterMigration,
+      roiPercent: result.roiPercent,
+      tone: decision.tone,
+    };
+  });
 }
 
 function getDecision(result) {
@@ -316,7 +390,17 @@ function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_IN
         }),
       },
     ],
-    chartSlots: ['costChart', 'savingsChart'],
+    chartSlots: [
+      { id: 'costChart', title: translate(language, 'charts.costTitle') },
+      { id: 'savingsChart', title: translate(language, 'charts.netSavingsTitle') },
+    ],
+    yearlyRows: buildChartSeries(result, years).map((point) => ({
+      year: point.year,
+      projected: point.projected,
+      currentCost: point.currentCost,
+      targetCost: point.targetCost,
+      netSavings: point.netSavings,
+    })),
   };
 }
 
@@ -501,8 +585,12 @@ function generateReport() {
   const result = calculateRoi(inputs);
   renderCharts(result, inputs);
   const language = getCurrentLanguage();
-  const report = buildReportModel(inputs, result, language, inputs.currency);
-  const chartImages = report.chartSlots.map((slot) => getChartImage(slot)).filter(Boolean);
+  const currency = inputs.currency || getCurrentCurrency();
+  const report = buildReportModel(inputs, result, language, currency);
+  const chartFigures = report.chartSlots
+    .map((slot) => ({ title: slot.title, image: getChartImage(slot.id) }))
+    .filter((figure) => figure.image);
+  const hasProjectedRows = report.yearlyRows.some((row) => row.projected);
 
   reportBody.innerHTML = `
     <article class="generated-report">
@@ -518,9 +606,33 @@ function generateReport() {
         </dl>
       </section>
       <section>
+        <h2>${escapeHtml(translate(language, 'report.yearlyHeading'))}</h2>
+        <div class="report-table-wrap">
+          <table class="report-year-table">
+            <thead>
+              <tr>
+                <th>${escapeHtml(translate(language, 'report.col.year'))}</th>
+                <th>${escapeHtml(translate(language, 'report.col.cumulative', { platform: inputs.currentPlatform }))}</th>
+                <th>${escapeHtml(translate(language, 'report.col.cumulative', { platform: inputs.targetPlatform }))}</th>
+                <th>${escapeHtml(translate(language, 'report.col.netSavings'))}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${report.yearlyRows.map((row) => `<tr${row.projected ? ' class="projected"' : ''}>
+                <td>Y${row.year}${row.projected ? '*' : ''}</td>
+                <td>${escapeHtml(formatCurrency(row.currentCost, currency))}</td>
+                <td>${escapeHtml(formatCurrency(row.targetCost, currency))}</td>
+                <td>${escapeHtml(formatCurrency(row.netSavings, currency))}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        ${hasProjectedRows ? `<p class="report-note">${escapeHtml(translate(language, 'report.projectedNote'))}</p>` : ''}
+      </section>
+      <section>
         <h2>${escapeHtml(translate(language, 'report.chartsHeading'))}</h2>
         <div class="report-chart-grid">
-          ${chartImages.map((image) => `<img src="${image}" alt="VirtROI chart snapshot" />`).join('')}
+          ${chartFigures.map((figure) => `<figure><figcaption>${escapeHtml(figure.title)}</figcaption><img src="${figure.image}" alt="${escapeHtml(figure.title)}" /></figure>`).join('')}
         </div>
       </section>
       <section>
@@ -582,7 +694,16 @@ function downloadReportAsHtml() {
     .report-metrics dt { color: #5b6475; font-size: 0.82rem; font-weight: 850; text-transform: uppercase; }
     .report-metrics dd { margin: 4px 0 0; font-size: 1.35rem; font-weight: 850; }
     .report-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .report-chart-grid figure { margin: 0; }
+    .report-chart-grid figcaption { margin-bottom: 6px; font-weight: 850; }
     .report-chart-grid img { width: 100%; border: 1px solid #d9e1ef; border-radius: 16px; }
+    .report-table-wrap { overflow-x: auto; }
+    .report-year-table { width: 100%; border-collapse: collapse; }
+    .report-year-table th, .report-year-table td { border-bottom: 1px solid #d9e1ef; padding: 9px 12px; text-align: right; white-space: nowrap; }
+    .report-year-table th:first-child, .report-year-table td:first-child { text-align: left; }
+    .report-year-table th { color: #5b6475; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .report-year-table tr.projected td { color: #8a5a12; }
+    .report-note { color: #8a5a12; font-size: 0.88rem; }
     @media (max-width: 720px) { body { padding: 16px; } .report-document, .report-metrics, .report-chart-grid { display: block; } .report-metrics div, .report-chart-grid img { margin-bottom: 12px; } }
   </style>
 </head>
@@ -697,6 +818,18 @@ function renderResults(result, inputs) {
   }));
   setText('decisionLabel', translate(language, `decision.${decision.tone}.label`));
   setText('decisionSummary', translate(language, `decision.${decision.tone}.summary`));
+
+  const breakEven = computeBreakEvenUnitPrices(result, inputs);
+  const targetUnitLabel = translate(language, getPricingMetricLabelKey(inputs.targetPricingMetric, 'annual'));
+  const currentUnitLabel = translate(language, getPricingMetricLabelKey(inputs.currentPricingMetric, 'annual'));
+  const notAvailable = translate(language, 'format.notAvailable');
+  setText('targetBreakEvenPrice', breakEven.targetUnitPrice === null ? notAvailable : formatCurrency(breakEven.targetUnitPrice, currency));
+  setText('breakEvenContext', translate(language, 'metrics.breakEvenDetail', {
+    unit: targetUnitLabel.toLowerCase(),
+    quote: formatCurrency(result.targetLicenseAnnualCost / Math.max(1, inputs.targetPricingMetric === 'socket' ? result.totalSockets : result.totalCores), currency),
+    current: breakEven.currentUnitPrice === null ? notAvailable : formatCurrency(breakEven.currentUnitPrice, currency),
+    currentUnit: currentUnitLabel.toLowerCase(),
+  }));
 
   if (decisionCard) {
     decisionCard.className = `decision-card ${decision.tone}`;
@@ -919,6 +1052,7 @@ function calculateAndRender() {
   refreshPricingPeriodLabels(inputs);
   renderResults(result, inputs);
   renderCharts(result, inputs);
+  renderScenarioTable();
 }
 
 function activateTab(target) {
@@ -945,6 +1079,155 @@ function initializeTabs() {
       activateTab(link.dataset.tabLink);
     });
   });
+}
+
+function loadStoredScenarios() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const list = JSON.parse(localStorage.getItem(SCENARIO_STORAGE_KEY) || '[]');
+    return Array.isArray(list) ? list.filter((scenario) => scenario && typeof scenario === 'object' && scenario.inputs) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function persistScenarios(list) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify(list));
+  } catch (error) {
+    /* storage full or blocked; scenarios stay in memory for this session */
+  }
+}
+
+const INPUT_ELEMENT_IDS = {
+  totalSockets: 'absoluteSockets',
+  totalCores: 'absoluteCores',
+  currency: 'currencySelect',
+};
+
+function applyInputsToForm(inputs) {
+  SHAREABLE_INPUT_KEYS.forEach((key) => {
+    if (inputs[key] === undefined) return;
+    const element = getElement(INPUT_ELEMENT_IDS[key] || key);
+    if (element) {
+      element.value = String(inputs[key]);
+    }
+  });
+}
+
+function renderScenarioTable() {
+  const wrap = getElement('scenarioTable');
+  if (!wrap) return;
+
+  const language = getCurrentLanguage();
+  const stored = loadStoredScenarios();
+  const scenarios = [{ name: translate(language, 'scenarios.current'), inputs: getInputs(), live: true }, ...stored];
+  const rows = buildScenarioComparison(scenarios);
+
+  const cells = rows
+    .map((row, index) => {
+      const scenario = scenarios[index];
+      const currency = (scenario.inputs && scenario.inputs.currency) || DEFAULT_INPUTS.currency;
+      const actions = scenario.live
+        ? ''
+        : `<button type="button" class="table-action" data-action="load" data-index="${index - 1}">${escapeHtml(translate(language, 'scenarios.load'))}</button>
+           <button type="button" class="table-action danger" data-action="delete" data-index="${index - 1}">${escapeHtml(translate(language, 'scenarios.delete'))}</button>`;
+      return `<tr${scenario.live ? ' class="live"' : ''}>
+        <td>${escapeHtml(row.name)}</td>
+        <td>${escapeHtml(formatCurrency(row.annualSavings, currency))}</td>
+        <td>${escapeHtml(formatYears(row.paybackYears, language))}</td>
+        <td>${escapeHtml(formatCurrency(row.netSavingsAfterMigration, currency))}</td>
+        <td>${escapeHtml(formatPercent(row.roiPercent, language))}</td>
+        <td><span class="scenario-signal ${row.tone}">${escapeHtml(translate(language, `decision.${row.tone}.label`))}</span></td>
+        <td class="scenario-actions-cell">${actions}</td>
+      </tr>`;
+    })
+    .join('');
+
+  wrap.innerHTML = `
+    <div class="scenario-table-scroll">
+      <table class="scenario-table">
+        <thead>
+          <tr>
+            <th>${escapeHtml(translate(language, 'scenarios.col.scenario'))}</th>
+            <th>${escapeHtml(translate(language, 'scenarios.col.annualSavings'))}</th>
+            <th>${escapeHtml(translate(language, 'scenarios.col.payback'))}</th>
+            <th>${escapeHtml(translate(language, 'scenarios.col.netSavings'))}</th>
+            <th>${escapeHtml(translate(language, 'scenarios.col.roi'))}</th>
+            <th>${escapeHtml(translate(language, 'scenarios.col.decision'))}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>${cells}</tbody>
+      </table>
+    </div>
+    ${stored.length ? '' : `<p class="scenario-empty">${escapeHtml(translate(language, 'scenarios.empty'))}</p>`}`;
+}
+
+function buildShareUrl() {
+  const query = encodeInputsToQuery(getInputs());
+  if (typeof window === 'undefined') return `?${query}`;
+  return `${window.location.origin}${window.location.pathname}?${query}`;
+}
+
+function initializeScenarios() {
+  const saveButton = getElement('saveScenario');
+  const shareButton = getElement('shareScenario');
+  const nameInput = getElement('scenarioName');
+  const wrap = getElement('scenarioTable');
+
+  if (typeof window !== 'undefined' && window.location.search.length > 1) {
+    applyInputsToForm(decodeInputsFromQuery(window.location.search));
+  }
+
+  if (saveButton) {
+    saveButton.addEventListener('click', () => {
+      const stored = loadStoredScenarios();
+      const fallbackName = translate(getCurrentLanguage(), 'scenarios.defaultName', { n: stored.length + 1 });
+      const name = ((nameInput && nameInput.value) || '').trim() || fallbackName;
+      stored.push({ name, inputs: getInputs(), savedAt: new Date().toISOString() });
+      persistScenarios(stored);
+      if (nameInput) nameInput.value = '';
+      renderScenarioTable();
+    });
+  }
+
+  if (shareButton) {
+    shareButton.addEventListener('click', () => {
+      const url = buildShareUrl();
+      const confirmCopy = () => {
+        shareButton.textContent = translate(getCurrentLanguage(), 'scenarios.shareCopied');
+        setTimeout(() => {
+          shareButton.textContent = translate(getCurrentLanguage(), 'scenarios.share');
+        }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(confirmCopy, () => window.prompt('URL', url));
+      } else {
+        window.prompt('URL', url);
+      }
+    });
+  }
+
+  if (wrap) {
+    wrap.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      const stored = loadStoredScenarios();
+      const index = Number(button.dataset.index);
+      if (!Number.isInteger(index) || index < 0 || index >= stored.length) return;
+
+      if (button.dataset.action === 'load') {
+        applyInputsToForm(stored[index].inputs);
+        calculateAndRender();
+      } else if (button.dataset.action === 'delete') {
+        stored.splice(index, 1);
+        persistScenarios(stored);
+        renderScenarioTable();
+      }
+    });
+  }
 }
 
 function setChartFullscreen(card, active) {
@@ -997,6 +1280,7 @@ function initializeApp() {
   initializeCostPeriodSelector();
   initializeTabs();
   initializeChartFullscreen();
+  initializeScenarios();
   document.querySelectorAll('.chart-card canvas').forEach((canvas) => attachChartHover(canvas));
 
   const generateReportButton = getElement('generateReport');
@@ -1033,6 +1317,10 @@ if (typeof module !== 'undefined') {
     DEFAULT_INPUTS,
     calculateRoi,
     buildChartSeries,
+    buildScenarioComparison,
+    computeBreakEvenUnitPrices,
+    encodeInputsToQuery,
+    decodeInputsFromQuery,
     getDecision,
     formatCurrency,
     getCurrencyOptions,

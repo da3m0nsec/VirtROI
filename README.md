@@ -20,6 +20,8 @@ VirtROI estimates:
 - a simple decision signal: `Strong case`, `Worth evaluating`, or `Weak financial case`
 - dynamic charts for cumulative cost and net savings over time, including two extra projected scenario years
 - hover tooltips on every chart and a full-screen mode that stays responsive on mobile and vertical screens
+- a scenario library to save the current inputs under a name, compare saved scenarios side by side, and share a scenario via URL
+- a break-even card translating the decision into concrete unit prices: the target price at which the case stops paying off, and the current-platform price that would keep you where you are
 - currency output in USD, EUR, GBP, JPY, or BRL
 - recurring cost inputs as annualized amounts or totals for the selected analysis period
 - language options for English, Spanish, Portuguese, Italian, Japanese, and German
@@ -141,13 +143,22 @@ Charts update automatically when any input changes. The x-axis marks projected y
 
 Hovering any chart shows exact values, and every chart card has a **Full screen** button (Escape closes it) that keeps working on mobile and vertical screens.
 
+### Scenario library
+
+Below the calculator, the scenario library snapshots the current inputs under a name (stored in `localStorage`, so nothing leaves the browser) and compares saved scenarios side by side: annual savings, payback, net savings, ROI, and the decision signal, with the live inputs always shown as the first row. Each saved scenario can be loaded back into the form or deleted. **Copy share link** produces a URL that encodes every input as a query parameter, so a colleague opening the link sees the same scenario without anything being uploaded.
+
+### Break-even unit prices
+
+The results grid includes a break-even card that converts the whole cost model into two concrete numbers: the **target unit price** at which net savings over the analysis period hit zero (the maximum you should accept when negotiating the target quote), and the **current-platform unit price** at which staying put costs the same as switching (the renewal discount that would kill the case).
+
 ## Editable PDF report
 
 The **Report** tab can generate a browser-side, editable business-case report from the current inputs and results. The generated report includes:
 
 - executive summary
 - key metrics
-- chart snapshots
+- a yearly breakdown table with cumulative cost per platform and net savings for each year, including the projected years marked with `*` — the exact figures the chart tooltips show, readable in a printed PDF
+- titled chart snapshots
 - a manual notes section for assumptions, risks, next steps, or stakeholder comments
 
 After editing the report in-place, use **Export PDF**. VirtROI opens the browser print dialog, where you can choose **Save as PDF**. No report data leaves the browser.
