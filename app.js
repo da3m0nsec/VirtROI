@@ -51,6 +51,26 @@ const SCENARIO_COLORS = ['#2155d6', '#0f8f5f', '#7c3aed', '#b7791f'];
 
 const MAX_OVERLAY_SCENARIOS = 4;
 
+// Stack order is license → add-ons → one-time; these three hues pass the
+// adjacent-pair contrast checks in that order.
+const COMPOSITION_COLORS = ['#2155d6', '#b7791f', '#7c3aed'];
+
+const REPORT_CHART_OPTIONS = [
+  { id: 'costChart', titleKey: 'charts.costTitle', defaultSelected: true },
+  { id: 'savingsChart', titleKey: 'charts.netSavingsTitle', defaultSelected: true },
+  { id: 'annualOutlayChart', titleKey: 'charts.outlayTitle', defaultSelected: false },
+  { id: 'costCompositionChart', titleKey: 'charts.compositionTitle', defaultSelected: false },
+  { id: 'scenarioOverlayChart', titleKey: 'charts.scenarioOverlayTitle', defaultSelected: false },
+];
+
+function getReportChartOptions() {
+  return REPORT_CHART_OPTIONS.map((option) => ({ ...option }));
+}
+
+function getDefaultReportChartIds() {
+  return REPORT_CHART_OPTIONS.filter((option) => option.defaultSelected).map((option) => option.id);
+}
+
 const SHAREABLE_INPUT_KEYS = Object.keys(DEFAULT_INPUTS);
 
 const NUMERIC_INPUT_KEYS = new Set([
@@ -276,6 +296,31 @@ function buildAnnualOutlaySeries(result, years, extraProjectionYears = 2) {
   return series;
 }
 
+function buildCostCompositionSeries(result, inputs) {
+  const years = Math.max(1, Math.round(toFiniteNumber(inputs.years, DEFAULT_INPUTS.years)));
+  const currentLicense = toFiniteNumber(result.currentLicenseAnnualCost) * years;
+  const targetLicense = toFiniteNumber(result.targetLicenseAnnualCost) * years;
+  const currentAddons = (toFiniteNumber(result.currentAnnualCost) - toFiniteNumber(result.currentLicenseAnnualCost)) * years;
+  const targetAddons = (toFiniteNumber(result.targetAnnualCost) - toFiniteNumber(result.targetLicenseAnnualCost)) * years;
+
+  return [
+    {
+      label: inputs.currentPlatform || DEFAULT_INPUTS.currentPlatform,
+      license: roundTo(currentLicense, 2),
+      addons: roundTo(currentAddons, 2),
+      oneTime: 0,
+      total: roundTo(currentLicense + currentAddons, 2),
+    },
+    {
+      label: inputs.targetPlatform || DEFAULT_INPUTS.targetPlatform,
+      license: roundTo(targetLicense, 2),
+      addons: roundTo(targetAddons, 2),
+      oneTime: roundTo(toFiniteNumber(result.oneTimeCosts ?? result.migrationCost), 2),
+      total: roundTo(targetLicense + targetAddons + toFiniteNumber(result.oneTimeCosts ?? result.migrationCost), 2),
+    },
+  ];
+}
+
 function buildScenarioOverlay(scenarios, extraProjectionYears = 2) {
   const entries = scenarios.slice(0, MAX_OVERLAY_SCENARIOS).map((scenario, index) => {
     const inputs = scenario.inputs || {};
@@ -444,14 +489,12 @@ function buildReportModel(inputs, result, language = 'en', currency = DEFAULT_IN
         }),
       },
     ],
-    chartSlots: [
-      { id: 'costChart', title: translate(language, 'charts.costTitle') },
-      { id: 'savingsChart', title: translate(language, 'charts.netSavingsTitle') },
-      { id: 'annualOutlayChart', title: translate(language, 'charts.outlayTitle') },
-      ...(toFiniteNumber(options.scenarioCount) > 0
-        ? [{ id: 'scenarioOverlayChart', title: translate(language, 'charts.scenarioOverlayTitle') }]
-        : []),
-    ],
+    chartSlots: (() => {
+      const selected = Array.isArray(options.charts) ? options.charts : getDefaultReportChartIds();
+      return REPORT_CHART_OPTIONS
+        .filter((option) => selected.includes(option.id))
+        .map((option) => ({ id: option.id, title: translate(language, option.titleKey) }));
+    })(),
     yearlyRows: buildChartSeries(result, years).map((point) => ({
       year: point.year,
       projected: point.projected,
@@ -620,6 +663,7 @@ function initializeLanguageSelector() {
   selector.addEventListener('change', () => {
     applyTranslations(selector.value);
     initializeCostPeriodSelector();
+    renderReportOptions();
     calculateAndRender();
   });
 }
@@ -641,10 +685,12 @@ function generateReport() {
 
   const inputs = getInputs();
   const result = calculateRoi(inputs);
-  renderCharts(result, inputs, { pointLabels: true });
+  const selectedCharts = getSelectedReportChartIds();
+  const selectedScenarios = getSelectedReportScenarios();
+  renderCharts(result, inputs, { pointLabels: true, overlayScenarios: selectedScenarios });
   const language = getCurrentLanguage();
   const currency = inputs.currency || getCurrentCurrency();
-  const report = buildReportModel(inputs, result, language, currency, { scenarioCount: loadStoredScenarios().length });
+  const report = buildReportModel(inputs, result, language, currency, { charts: selectedCharts });
   const chartFigures = report.chartSlots
     .map((slot) => {
       const canvas = getElement(slot.id);
@@ -697,7 +743,7 @@ function generateReport() {
         </div>
         ${hasProjectedRows ? `<p class="report-note">${escapeHtml(translate(language, 'report.projectedNote'))}</p>` : ''}
       </section>
-      <section>
+      ${chartFigures.length ? `<section>
         <h2>${escapeHtml(translate(language, 'report.chartsHeading'))}</h2>
         <div class="report-chart-grid">
           ${chartFigures.map((figure) => `<figure>
@@ -706,7 +752,7 @@ function generateReport() {
             ${figure.legendHtml ? `<div class="legend">${figure.legendHtml}</div>` : ''}
           </figure>`).join('')}
         </div>
-      </section>
+      </section>` : ''}
       <section>
         <h2>${escapeHtml(translate(language, 'report.notesHeading'))}</h2>
         <p>${escapeHtml(translate(language, 'report.notesPlaceholder'))}</p>
@@ -813,17 +859,15 @@ function downloadCanvasAsPng(canvas, filename) {
 function downloadGraphsAsPng() {
   const inputs = getInputs();
   const result = calculateRoi(inputs);
-  renderCharts(result, inputs, { pointLabels: true });
+  renderCharts(result, inputs, { pointLabels: true, overlayScenarios: getSelectedReportScenarios() });
 
   const language = getCurrentLanguage();
-  const charts = [
-    { title: translate(language, 'charts.costTitle'), canvas: getElement('costChart') },
-    { title: translate(language, 'charts.netSavingsTitle'), canvas: getElement('savingsChart') },
-    { title: translate(language, 'charts.outlayTitle'), canvas: getElement('annualOutlayChart') },
-    ...(loadStoredScenarios().length
-      ? [{ title: translate(language, 'charts.scenarioOverlayTitle'), canvas: getElement('scenarioOverlayChart') }]
-      : []),
-  ].filter((chart) => chart.canvas);
+  const charts = getSelectedReportChartIds()
+    .map((id) => {
+      const option = REPORT_CHART_OPTIONS.find((entry) => entry.id === id);
+      return { title: translate(language, option.titleKey), canvas: getElement(id) };
+    })
+    .filter((chart) => chart.canvas);
   if (!charts.length || typeof document === 'undefined') return;
 
   const gap = 28;
@@ -931,6 +975,10 @@ function drawChartSegment(context, from, to, dashed) {
 
 function formatYearAxisLabel(point) {
   return `Y${point.year}${point.projected ? '*' : ''}`;
+}
+
+function formatPlatformAxisLabel(point) {
+  return point.label || '';
 }
 
 function drawChart(canvas, series, keys, colors, formatter, options = {}) {
@@ -1083,15 +1131,20 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
   context.scale(dpr, dpr);
   context.clearRect(0, 0, width, height);
 
+  const stacked = Boolean(options.stacked);
   const padding = { top: 18, right: 20, bottom: 42, left: 72 };
-  const values = series.flatMap((point) => keys.map((key) => point[key]));
+  const values = stacked
+    ? series.map((point) => keys.reduce((total, key) => total + toFiniteNumber(point[key]), 0))
+    : series.flatMap((point) => keys.map((key) => point[key]));
   const maxValue = Math.max(...values, 0);
   const range = maxValue || 1;
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
   const groupWidth = plotWidth / series.length;
   const barGap = 2;
-  const barWidth = Math.max(8, Math.min(46, (groupWidth * 0.64 - barGap * (keys.length - 1)) / keys.length));
+  const barWidth = stacked
+    ? Math.max(8, Math.min(96, groupWidth * 0.45))
+    : Math.max(8, Math.min(46, (groupWidth * 0.64 - barGap * (keys.length - 1)) / keys.length));
   const groupCenter = (index) => padding.left + groupWidth * index + groupWidth / 2;
   const yFor = (value) => padding.top + plotHeight - (Math.max(0, value) / range) * plotHeight;
   const baselineY = yFor(0);
@@ -1118,43 +1171,92 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
   });
   context.textAlign = 'left';
 
-  const groupSpan = keys.length * barWidth + (keys.length - 1) * barGap;
-  keys.forEach((key, keyIndex) => {
-    series.forEach((point, index) => {
-      const x = groupCenter(index) - groupSpan / 2 + keyIndex * (barWidth + barGap);
-      const y = yFor(point[key]);
-      const barHeight = Math.max(0, baselineY - y);
-      const radius = Math.min(4, barWidth / 2, barHeight);
-      context.fillStyle = colors[keyIndex];
-      context.globalAlpha = isAccented(point) ? 0.45 : 1;
-      context.beginPath();
-      if (typeof context.roundRect === 'function') {
-        context.roundRect(x, y, barWidth, barHeight, [radius, radius, 0, 0]);
-      } else {
-        context.rect(x, y, barWidth, barHeight);
-      }
-      context.fill();
-    });
-  });
-  context.globalAlpha = 1;
+  const groupSpan = stacked ? barWidth : keys.length * barWidth + (keys.length - 1) * barGap;
 
-  if (options.pointLabels) {
-    context.font = '600 11px system-ui, sans-serif';
-    context.textAlign = 'center';
+  if (stacked) {
     series.forEach((point, index) => {
-      const labelYs = [];
+      const x = groupCenter(index) - barWidth / 2;
+      let cumulative = 0;
       keys.forEach((key, keyIndex) => {
-        const x = groupCenter(index) - groupSpan / 2 + keyIndex * (barWidth + barGap) + barWidth / 2;
-        let y = yFor(point[key]) - 6;
-        // Nudge upward when this label would sit on top of a neighbor's.
-        while (labelYs.some((other) => Math.abs(other - y) < 12)) {
-          y -= 12;
+        const value = toFiniteNumber(point[key]);
+        if (value <= 0) return;
+        const top = yFor(cumulative + value);
+        const bottom = yFor(cumulative);
+        // 2px surface gap keeps neighbouring segments legible.
+        const segmentHeight = Math.max(0, bottom - top - barGap);
+        const isTopSegment = keys.slice(keyIndex + 1).every((later) => toFiniteNumber(point[later]) <= 0);
+        const radius = isTopSegment ? Math.min(4, barWidth / 2, segmentHeight) : 0;
+        context.fillStyle = colors[keyIndex];
+        context.beginPath();
+        if (typeof context.roundRect === 'function') {
+          context.roundRect(x, top, barWidth, segmentHeight, [radius, radius, 0, 0]);
+        } else {
+          context.rect(x, top, barWidth, segmentHeight);
         }
-        labelYs.push(y);
-        context.fillStyle = '#253044';
-        context.fillText(formatter(point[key]), x, Math.max(y, padding.top + 4));
+        context.fill();
+        cumulative += value;
       });
     });
+  } else {
+    keys.forEach((key, keyIndex) => {
+      series.forEach((point, index) => {
+        const x = groupCenter(index) - groupSpan / 2 + keyIndex * (barWidth + barGap);
+        const y = yFor(point[key]);
+        const barHeight = Math.max(0, baselineY - y);
+        const radius = Math.min(4, barWidth / 2, barHeight);
+        context.fillStyle = colors[keyIndex];
+        context.globalAlpha = isAccented(point) ? 0.45 : 1;
+        context.beginPath();
+        if (typeof context.roundRect === 'function') {
+          context.roundRect(x, y, barWidth, barHeight, [radius, radius, 0, 0]);
+        } else {
+          context.rect(x, y, barWidth, barHeight);
+        }
+        context.fill();
+      });
+    });
+    context.globalAlpha = 1;
+  }
+
+  if (options.pointLabels) {
+    context.textAlign = 'center';
+    if (stacked) {
+      series.forEach((point, index) => {
+        const x = groupCenter(index);
+        let cumulative = 0;
+        keys.forEach((key) => {
+          const value = toFiniteNumber(point[key]);
+          if (value <= 0) return;
+          const top = yFor(cumulative + value);
+          const bottom = yFor(cumulative);
+          if (bottom - top >= 18) {
+            context.font = '600 11px system-ui, sans-serif';
+            context.fillStyle = '#ffffff';
+            context.fillText(formatter(value), x, (top + bottom) / 2 + 4);
+          }
+          cumulative += value;
+        });
+        context.font = '700 12px system-ui, sans-serif';
+        context.fillStyle = '#253044';
+        context.fillText(formatter(cumulative), x, Math.max(yFor(cumulative) - 7, padding.top + 4));
+      });
+    } else {
+      context.font = '600 11px system-ui, sans-serif';
+      series.forEach((point, index) => {
+        const labelYs = [];
+        keys.forEach((key, keyIndex) => {
+          const x = groupCenter(index) - groupSpan / 2 + keyIndex * (barWidth + barGap) + barWidth / 2;
+          let y = yFor(point[key]) - 6;
+          // Nudge upward when this label would sit on top of a neighbor's.
+          while (labelYs.some((other) => Math.abs(other - y) < 12)) {
+            y -= 12;
+          }
+          labelYs.push(y);
+          context.fillStyle = '#253044';
+          context.fillText(formatter(point[key]), x, Math.max(y, padding.top + 4));
+        });
+      });
+    }
     context.textAlign = 'left';
   }
 
@@ -1261,14 +1363,35 @@ function renderCharts(result, inputs, chartOptions = {}) {
     ],
   });
 
-  const storedScenarios = loadStoredScenarios()
-    .filter((scenario) => ((scenario.inputs && scenario.inputs.currency) || DEFAULT_INPUTS.currency) === currency)
-    .slice(0, MAX_OVERLAY_SCENARIOS - 1);
+  drawBarChart(getElement('costCompositionChart'), buildCostCompositionSeries(result, inputs), ['license', 'addons', 'oneTime'], COMPOSITION_COLORS, formatValue, {
+    pointLabels,
+    stacked: true,
+    axisLabel: formatPlatformAxisLabel,
+    accent: () => false,
+    seriesLabels: [
+      translate(language, 'charts.legendLicense'),
+      translate(language, 'charts.legendAddons'),
+      translate(language, 'charts.legendOneTime'),
+    ],
+  });
+
+  renderScenarioOverlay(inputs, currency, language, chartOptions.overlayScenarios);
+}
+
+function renderScenarioOverlay(inputs, currency, language, explicitScenarios) {
+  const canvas = getElement('scenarioOverlayChart');
+  if (!canvas) return;
+
+  const scenarios = explicitScenarios
+    || loadStoredScenarios()
+      .filter((scenario) => ((scenario.inputs && scenario.inputs.currency) || DEFAULT_INPUTS.currency) === currency)
+      .slice(0, MAX_OVERLAY_SCENARIOS - 1);
   const overlay = buildScenarioOverlay([
     { name: translate(language, 'scenarios.current'), inputs },
-    ...storedScenarios,
+    ...scenarios,
   ]);
-  drawChart(getElement('scenarioOverlayChart'), overlay.series, overlay.keys, SCENARIO_COLORS.slice(0, overlay.keys.length), formatValue, {
+
+  drawChart(canvas, overlay.series, overlay.keys, SCENARIO_COLORS.slice(0, overlay.keys.length), (value) => formatCurrency(value, currency), {
     zeroBaseline: true,
     seriesLabels: overlay.names,
   });
@@ -1278,7 +1401,7 @@ function renderCharts(result, inputs, chartOptions = {}) {
     const entries = overlay.names
       .map((name, index) => `<span><i style="background:${SCENARIO_COLORS[index]}"></i> ${escapeHtml(name)}</span>`)
       .join('');
-    const emptyHint = storedScenarios.length ? '' : `<span class="overlay-empty">${escapeHtml(translate(language, 'charts.scenarioOverlayEmpty'))}</span>`;
+    const emptyHint = scenarios.length ? '' : `<span class="overlay-empty">${escapeHtml(translate(language, 'charts.scenarioOverlayEmpty'))}</span>`;
     overlayLegend.innerHTML = entries + emptyHint;
   }
 }
@@ -1403,6 +1526,59 @@ function renderScenarioTable() {
     ${stored.length ? '' : `<p class="scenario-empty">${escapeHtml(translate(language, 'scenarios.empty'))}</p>`}`;
 }
 
+function getSelectedReportChartIds() {
+  const container = getElement('reportChartOptions');
+  if (!container) return getDefaultReportChartIds();
+
+  const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map((input) => input.value);
+  // Keep the canonical order regardless of the order boxes were ticked.
+  return REPORT_CHART_OPTIONS.filter((option) => checked.includes(option.id)).map((option) => option.id);
+}
+
+function getSelectedReportScenarios() {
+  const container = getElement('reportScenarioOptions');
+  const stored = loadStoredScenarios();
+  if (!container) return stored.slice(0, MAX_OVERLAY_SCENARIOS - 1);
+
+  const checkedIndexes = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map((input) => Number(input.value));
+  return stored.filter((_, index) => checkedIndexes.includes(index)).slice(0, MAX_OVERLAY_SCENARIOS - 1);
+}
+
+function renderReportOptions() {
+  const chartContainer = getElement('reportChartOptions');
+  const scenarioContainer = getElement('reportScenarioOptions');
+  if (!chartContainer && !scenarioContainer) return;
+
+  const language = getCurrentLanguage();
+
+  if (chartContainer) {
+    // Preserve ticks across re-renders (language switches, scenario edits).
+    const previous = chartContainer.querySelector('input')
+      ? getSelectedReportChartIds()
+      : getDefaultReportChartIds();
+    chartContainer.innerHTML = getReportChartOptions()
+      .map((option) => `<label class="option-item">
+        <input type="checkbox" value="${option.id}"${previous.includes(option.id) ? ' checked' : ''} />
+        <span>${escapeHtml(translate(language, option.titleKey))}</span>
+      </label>`)
+      .join('');
+  }
+
+  if (scenarioContainer) {
+    const previouslyChecked = Array.from(scenarioContainer.querySelectorAll('input:checked')).map((input) => Number(input.value));
+    const hadInputs = Boolean(scenarioContainer.querySelector('input'));
+    const stored = loadStoredScenarios();
+    scenarioContainer.innerHTML = stored.length
+      ? stored
+        .map((scenario, index) => `<label class="option-item">
+          <input type="checkbox" value="${index}"${!hadInputs || previouslyChecked.includes(index) ? ' checked' : ''} />
+          <span>${escapeHtml(scenario.name || translate(language, 'scenarios.defaultName', { n: index + 1 }))}</span>
+        </label>`)
+        .join('')
+      : `<p class="option-empty">${escapeHtml(translate(language, 'report.noScenarios'))}</p>`;
+  }
+}
+
 function buildShareUrl() {
   const query = encodeInputsToQuery(getInputs());
   if (typeof window === 'undefined') return `?${query}`;
@@ -1428,6 +1604,7 @@ function initializeScenarios() {
       persistScenarios(stored);
       if (nameInput) nameInput.value = '';
       renderScenarioTable();
+      renderReportOptions();
     });
   }
 
@@ -1463,6 +1640,7 @@ function initializeScenarios() {
         stored.splice(index, 1);
         persistScenarios(stored);
         renderScenarioTable();
+        renderReportOptions();
       }
     });
   }
@@ -1519,6 +1697,7 @@ function initializeApp() {
   initializeTabs();
   initializeChartFullscreen();
   initializeScenarios();
+  renderReportOptions();
   document.querySelectorAll('.chart-card canvas').forEach((canvas) => attachChartHover(canvas));
 
   const generateReportButton = getElement('generateReport');
@@ -1556,7 +1735,10 @@ if (typeof module !== 'undefined') {
     calculateRoi,
     buildChartSeries,
     buildAnnualOutlaySeries,
+    buildCostCompositionSeries,
     buildScenarioOverlay,
+    getReportChartOptions,
+    getDefaultReportChartIds,
     buildScenarioComparison,
     computeBreakEvenUnitPrices,
     encodeInputsToQuery,

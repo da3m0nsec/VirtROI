@@ -318,6 +318,20 @@
 
           <article class="chart-card">
             <div class="chart-heading">
+              <h3 data-i18n="charts.compositionTitle">Cost composition</h3>
+              <p data-i18n="charts.compositionDescription">Where the money goes over the whole analysis period: licenses, add-ons, and one-time costs.</p>
+            </div>
+            <button class="chart-expand" type="button" aria-expanded="false" data-i18n="charts.expand">Full screen</button>
+            <canvas id="costCompositionChart" aria-label="Cost composition chart" data-i18n-attr="aria-label:charts.compositionAria" role="img"></canvas>
+            <div class="legend">
+              <span><i class="legend-license"></i> <span data-i18n="charts.legendLicense">Licenses</span></span>
+              <span><i class="legend-addons"></i> <span data-i18n="charts.legendAddons">Add-ons</span></span>
+              <span><i class="legend-onetime"></i> <span data-i18n="charts.legendOneTime">One-time costs</span></span>
+            </div>
+          </article>
+
+          <article class="chart-card chart-card-wide">
+            <div class="chart-heading">
               <h3 data-i18n="charts.scenarioOverlayTitle">Scenario comparison</h3>
               <p data-i18n="charts.scenarioOverlayDescription">Net savings over time for the current inputs and up to three saved scenarios in the same currency.</p>
             </div>
@@ -344,6 +358,16 @@
             <button id="downloadHtml" class="secondary-action" type="button" data-i18n="report.downloadHtml">Download HTML</button>
             <button id="downloadGraphs" class="secondary-action" type="button" data-i18n="report.downloadGraphs">Download graphs as PNG</button>
           </div>
+        </div>
+        <div class="report-options">
+          <fieldset class="field-group">
+            <legend data-i18n="report.chartsToInclude">Charts to include</legend>
+            <div id="reportChartOptions" class="option-list"></div>
+          </fieldset>
+          <fieldset class="field-group">
+            <legend data-i18n="report.scenariosToInclude">Saved scenarios in the comparison chart</legend>
+            <div id="reportScenarioOptions" class="option-list"></div>
+          </fieldset>
         </div>
         <div id="reportBody" class="report-editor" contenteditable="true" aria-label="Editable VirtROI report" data-i18n-attr="aria-label:report.editorAria">
           <p data-i18n="report.placeholder">Generate a report to populate this editable area.</p>

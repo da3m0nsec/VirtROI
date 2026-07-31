@@ -7,7 +7,10 @@ const {
   calculateRoi,
   buildChartSeries,
   buildAnnualOutlaySeries,
+  buildCostCompositionSeries,
   buildScenarioOverlay,
+  getReportChartOptions,
+  getDefaultReportChartIds,
   buildScenarioComparison,
   computeBreakEvenUnitPrices,
   encodeInputsToQuery,
@@ -204,6 +207,50 @@ test('buildAnnualOutlaySeries reports per-year cash out with one-time costs load
   assert.ok(series.slice(1).every((point) => point.targetOutlay === 90000));
 });
 
+test('buildCostCompositionSeries splits period totals into licenses, add-ons, and one-time costs', () => {
+  const inputs = {
+    currentPlatform: 'Product A',
+    targetPlatform: 'Product B',
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentUnitPricePerYear: 400,
+    targetUnitPricePerYear: 4500,
+    currentAdditionalAnnualCost: 20000,
+    targetAdditionalAnnualCost: 10000,
+    migrationCost: 40000,
+    hardwareCost: 15000,
+    years: 3,
+  };
+  const series = buildCostCompositionSeries(calculateRoi(inputs), inputs);
+
+  assert.deepEqual(series.map((point) => point.label), ['Product A', 'Product B']);
+  // Current: 192,000 license + 20,000 add-ons per year over 3 years, no one-time costs.
+  assert.deepEqual(series[0], { label: 'Product A', license: 576000, addons: 60000, oneTime: 0, total: 636000 });
+  // Target: 90,000 license + 10,000 add-ons per year over 3 years, plus 55,000 one-time.
+  assert.deepEqual(series[1], { label: 'Product B', license: 270000, addons: 30000, oneTime: 55000, total: 355000 });
+  // Each bar's segments add up to its labelled total.
+  series.forEach((point) => {
+    assert.equal(point.license + point.addons + point.oneTime, point.total);
+  });
+});
+
+test('report chart options default to the two cumulative charts only', () => {
+  const options = getReportChartOptions();
+
+  assert.deepEqual(options.map((option) => option.id), [
+    'costChart',
+    'savingsChart',
+    'annualOutlayChart',
+    'costCompositionChart',
+    'scenarioOverlayChart',
+  ]);
+  assert.deepEqual(getDefaultReportChartIds(), ['costChart', 'savingsChart']);
+});
+
 test('buildScenarioOverlay lines up net savings per year for up to four scenarios', () => {
   const baseInputs = {
     inputMode: 'topology',
@@ -366,11 +413,26 @@ test('the charts tab ships cost, savings, outlay, and scenario overlay charts wi
   assert.ok(html.includes('id="costChart"'));
   assert.ok(html.includes('id="savingsChart"'));
   assert.ok(html.includes('id="annualOutlayChart"'));
+  assert.ok(html.includes('id="costCompositionChart"'));
   assert.ok(html.includes('id="scenarioOverlayChart"'));
   assert.ok(html.includes('id="scenarioOverlayLegend"'));
   assert.equal(html.includes('id="priceVarianceChart"'), false);
   assert.equal(html.includes('id="sizingVarianceChart"'), false);
-  assert.equal((html.match(/class="chart-expand"/g) || []).length, 4);
+  assert.equal((html.match(/class="chart-expand"/g) || []).length, 5);
+
+  // The scenario comparison spans the full grid width, below the 2x2 charts.
+  assert.ok(html.includes('class="chart-card chart-card-wide"'));
+  assert.ok(html.indexOf('chart-card-wide') > html.indexOf('id="costCompositionChart"'));
+});
+
+test('the report tab exposes per-chart and per-scenario include selectors', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  assert.ok(html.includes('id="reportChartOptions"'));
+  assert.ok(html.includes('id="reportScenarioOptions"'));
+  assert.ok(html.includes('data-i18n="report.chartsToInclude"'));
+  assert.ok(html.includes('data-i18n="report.scenariosToInclude"'));
+  assert.ok(html.indexOf('id="reportChartOptions"') < html.indexOf('id="reportBody"'));
 });
 
 test('getDecision labels strong, evaluation, and weak cases', () => {
@@ -426,15 +488,24 @@ test('buildReportModel creates editable report sections with chart image slots',
   assert.equal(report.title, 'VirtROI report');
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
+  // Default report carries only the two cumulative charts.
   assert.deepEqual(report.chartSlots, [
     { id: 'costChart', title: 'Cumulative cost' },
     { id: 'savingsChart', title: 'Net savings' },
-    { id: 'annualOutlayChart', title: 'Annual cash outlay' },
   ]);
 
-  // The scenario overlay snapshot joins the report only when scenarios are saved.
-  const withScenarios = buildReportModel(inputs, result, 'en', 'USD', { scenarioCount: 2 });
-  assert.deepEqual(withScenarios.chartSlots.at(-1), { id: 'scenarioOverlayChart', title: 'Scenario comparison' });
+  // An explicit selection is honoured, always in canonical order.
+  const selected = buildReportModel(inputs, result, 'en', 'USD', {
+    charts: ['scenarioOverlayChart', 'costCompositionChart', 'costChart', 'bogusChart'],
+  });
+  assert.deepEqual(selected.chartSlots, [
+    { id: 'costChart', title: 'Cumulative cost' },
+    { id: 'costCompositionChart', title: 'Cost composition' },
+    { id: 'scenarioOverlayChart', title: 'Scenario comparison' },
+  ]);
+
+  // Selecting nothing drops the charts section entirely.
+  assert.deepEqual(buildReportModel(inputs, result, 'en', 'USD', { charts: [] }).chartSlots, []);
 
   // Yearly rows cover year 0 through the analysis period plus two projected years.
   assert.equal(report.yearlyRows.length, 6);
