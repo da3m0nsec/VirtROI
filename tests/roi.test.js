@@ -579,7 +579,8 @@ test('buildReportModel creates editable report sections with chart image slots',
 
   const report = buildReportModel(inputs, result, 'en');
 
-  assert.equal(report.title, 'VirtROI report');
+  // The report is deliberately unbranded so it can be shared as a business case.
+  assert.equal(report.title, 'Virtualization cost analysis');
   assert.match(report.summary, /Product A to Product B/);
   assert.equal(report.metrics.length, 8);
   // Default report carries only the two cumulative charts.
@@ -619,8 +620,46 @@ test('report export controls include HTML and graph PNG downloads with stable fi
   assert.ok(html.includes('id="downloadHtml"'));
   assert.ok(html.includes('id="downloadGraphs"'));
   assert.ok(html.indexOf('id="downloadHtml"') > html.indexOf('id="exportPdf"'));
-  assert.equal(buildDownloadFilename('VirtROI Report!', '.html', new Date('2026-04-28T12:00:00Z')), 'virtroi-report-2026-04-28.html');
+  assert.equal(buildDownloadFilename('Cost Analysis Report!', '.html', new Date('2026-04-28T12:00:00Z')), 'cost-analysis-report-2026-04-28.html');
   assert.equal(buildDownloadFilename('Graphs', 'png', new Date('2026-04-28T12:00:00Z')), 'graphs-2026-04-28.png');
+  assert.equal(buildDownloadFilename('', 'html', new Date('2026-04-28T12:00:00Z')), 'report-2026-04-28.html');
+});
+
+test('no report-facing string carries the VirtROI name', () => {
+  const localeDir = path.join(__dirname, '..', 'locales');
+  const reportKeyPrefixes = ['report.', 'metrics.', 'charts.', 'decision.', 'format.'];
+
+  for (const option of getLanguageOptions()) {
+    const locale = require(path.join(localeDir, `${option.code}.js`));
+    Object.entries(locale)
+      .filter(([key]) => reportKeyPrefixes.some((prefix) => key.startsWith(prefix)))
+      .forEach(([key, value]) => {
+        assert.ok(!/virtroi/i.test(value), `${option.code} ${key} still mentions VirtROI: ${value}`);
+      });
+  }
+
+  // The generated markup and download names stay unbranded too.
+  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  assert.equal(/virtroi-report|virtroi-graphs|VirtROI graphs|VirtROI chart/.test(app), false);
+});
+
+test('brand assets are wired into the page head and nav', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  assert.ok(html.includes('assets/favicon.ico'));
+  assert.ok(html.includes('assets/apple-touch-icon.png'));
+  assert.ok(html.includes('assets/og-image.png'));
+  assert.ok(html.includes('rel="manifest"'));
+  assert.ok(html.includes('assets/virtroi-logo.svg'));
+
+  ['favicon.ico', 'apple-touch-icon.png', 'og-image.png', 'virtroi-logo.svg', 'icon-192.png', 'icon-512-maskable.png']
+    .forEach((file) => {
+      assert.ok(fs.existsSync(path.join(__dirname, '..', 'assets', file)), `missing asset ${file}`);
+    });
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'site.webmanifest'), 'utf8'));
+  assert.equal(manifest.short_name, 'VirtROI');
+  assert.ok(manifest.icons.some((icon) => icon.purpose === 'maskable'));
 });
 
 

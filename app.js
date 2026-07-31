@@ -856,10 +856,10 @@ function ensureGeneratedReport() {
 
 function buildDownloadFilename(baseName, extension, date = new Date()) {
   const stamp = date.toISOString().slice(0, 10);
-  const safeBaseName = String(baseName || 'virtroi-report')
+  const safeBaseName = String(baseName || 'report')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'virtroi-report';
+    .replace(/^-+|-+$/g, '') || 'report';
   const safeExtension = String(extension || '').replace(/^\.+/, '') || 'html';
   return `${safeBaseName}-${stamp}.${safeExtension}`;
 }
@@ -922,7 +922,7 @@ function downloadReportAsHtml() {
   </main>
 </body>
 </html>`;
-  downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), buildDownloadFilename('virtroi-report', 'html'));
+  downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), buildDownloadFilename('cost-analysis-report', 'html'));
 }
 
 function downloadCanvasAsPng(canvas, filename) {
@@ -970,7 +970,7 @@ function downloadGraphsAsPng() {
   context.fillRect(0, 0, width, height);
   context.fillStyle = '#111827';
   context.font = '700 24px system-ui, sans-serif';
-  context.fillText('VirtROI graphs', padding, padding + 8);
+  context.fillText(translate(language, 'report.generatedTitle'), padding, padding + 8);
 
   let y = padding + titleHeight;
   charts.forEach((chart) => {
@@ -982,7 +982,7 @@ function downloadGraphsAsPng() {
     y += (chart.canvas.height || 280) + gap;
   });
 
-  downloadCanvasAsPng(combined, buildDownloadFilename('virtroi-graphs', 'png'));
+  downloadCanvasAsPng(combined, buildDownloadFilename('cost-analysis-graphs', 'png'));
   renderCharts(result, inputs);
 }
 

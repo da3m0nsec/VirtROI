@@ -87,10 +87,29 @@ select {
 }
 
 .brand {
+  display: flex;
+  align-items: center;
   margin-right: auto;
   color: var(--brand);
   font-size: 1.2rem;
   letter-spacing: -0.04em;
+}
+
+.brand img {
+  display: block;
+  width: auto;
+}
+
+/* The brand kit sets a 140px minimum lockup width; 62px tall clears it.
+   Clear space is baked into the SVG as one block height on each side.
+   Scoped under .brand so these outrank the `.brand img` type selector. */
+.brand .brand-lockup {
+  height: 62px;
+}
+
+.brand .brand-icon {
+  display: none;
+  height: 34px;
 }
 
 .hero-content {
@@ -880,6 +899,15 @@ canvas {
   .nav {
     flex-wrap: wrap;
     margin-bottom: 42px;
+  }
+
+  /* Below the lockup minimum, the kit calls for the icon on its own. */
+  .brand .brand-lockup {
+    display: none;
+  }
+
+  .brand .brand-icon {
+    display: block;
   }
 
   .nav a:not(.brand) {

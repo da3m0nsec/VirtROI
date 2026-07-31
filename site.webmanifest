@@ -1,0 +1,16 @@
+{
+  "name": "VirtROI | Virtualization ROI Calculator",
+  "short_name": "VirtROI",
+  "description": "Compare virtualization licensing models and estimate annual savings, payback, and ROI.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#04342C",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -31,6 +31,23 @@ VirtROI estimates:
 - language options for English, Spanish, Portuguese, Italian, Japanese, and German
 - an editable report that can include chart snapshots and be exported to PDF with the browser print dialog
 
+## Brand assets
+
+The logo kit lives in `assets/`, with usage rules in [`assets/BRAND.md`](assets/BRAND.md). Placement in this app:
+
+| Asset | Where it is used |
+| --- | --- |
+| `virtroi-logo.svg` | primary nav lockup, shown at 141×62 to clear the kit's 140px minimum width |
+| `virtroi-icon-simple.svg` | nav mark below 640px, where the lockup falls under its minimum width, and the SVG favicon |
+| `favicon.ico`, `favicon-16/32.png` | browser tab icons |
+| `apple-touch-icon.png` | iOS home screen |
+| `icon-192/256/512.png`, `icon-512-maskable.png` | `site.webmanifest`, including the Android adaptive icon |
+| `og-image.png` | Open Graph and Twitter social preview |
+
+The reversed lockups, tagline lockups, mono and knockout icons ship in `assets/` for slides and docs; nothing in the app renders on a dark background where they would apply.
+
+**The generated report is deliberately unbranded** — no VirtROI name, logo, or filename appears in the report, its PDF export, the standalone HTML download, or the graphs PNG, so it can be circulated as a neutral business case. Exports are named `cost-analysis-report-<date>.html` and `cost-analysis-graphs-<date>.png`, and the report is titled "Virtualization cost analysis" in each language.
+
 ## Capacity input modes
 
 You can model capacity in two ways:
