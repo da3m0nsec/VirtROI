@@ -1000,7 +1000,8 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
   context.scale(dpr, dpr);
   context.clearRect(0, 0, width, height);
 
-  const padding = { top: 18, right: 20, bottom: 42, left: 72 };
+  // Value labels sit above their points, so they need headroom inside the canvas.
+  const padding = { top: options.pointLabels ? 34 : 18, right: 20, bottom: 42, left: 72 };
   const values = series.flatMap((point) => keys.map((key) => point[key]));
   const maxValue = Math.max(...values, 0);
   const minValue = Math.min(...values, 0);
@@ -1016,15 +1017,28 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
   context.fillStyle = '#5b6475';
   context.font = '12px system-ui, sans-serif';
 
-  for (let i = 0; i <= 4; i += 1) {
-    const y = padding.top + (plotHeight * i) / 4;
-    const value = maxValue - (range * i) / 4;
+  // A single-series chart can label the axis with its own per-year values, so the
+  // numbers are readable straight off the grid instead of being interpolated.
+  const useValueTicks = Boolean(options.valueTicks) && keys.length === 1;
+  const gridValues = useValueTicks
+    ? (() => {
+      const raw = series.map((point) => toFiniteNumber(point[keys[0]]));
+      const step = Math.max(1, Math.ceil(raw.length / 8));
+      return [...new Set(raw.filter((_, index) => index % step === 0 || index === raw.length - 1))];
+    })()
+    : Array.from({ length: 5 }, (_, i) => maxValue - (range * i) / 4);
+
+  const drawnLabelYs = [];
+  gridValues.forEach((value) => {
+    const y = yFor(value);
+    if (drawnLabelYs.some((other) => Math.abs(other - y) < 14)) return;
+    drawnLabelYs.push(y);
     context.beginPath();
     context.moveTo(padding.left, y);
     context.lineTo(width - padding.right, y);
     context.stroke();
     context.fillText(formatter(value), 8, y + 4);
-  }
+  });
 
   if (options.zeroBaseline && minValue < 0 && maxValue > 0) {
     const zeroY = yFor(0);
@@ -1090,7 +1104,9 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
       const offset = keyIndex === 0 ? -9 : 19;
       series.forEach((point, index) => {
         const x = xFor(index);
-        const y = Math.min(Math.max(yFor(point[key]) + offset, padding.top + 4), height - padding.bottom + 12);
+        // Clamp into the canvas, not into the plot: a label for a top-of-range
+        // point belongs in the headroom above the first gridline.
+        const y = Math.min(Math.max(yFor(point[key]) + offset, 12), height - padding.bottom + 12);
         context.textAlign = index === 0 ? 'left' : index === series.length - 1 ? 'right' : 'center';
         context.fillStyle = '#253044';
         context.fillText(formatter(point[key]), x, y);
@@ -1132,7 +1148,8 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
   context.clearRect(0, 0, width, height);
 
   const stacked = Boolean(options.stacked);
-  const padding = { top: 18, right: 20, bottom: 42, left: 72 };
+  // Totals are drawn above the tallest bar, so leave headroom when labelling.
+  const padding = { top: options.pointLabels ? 34 : 18, right: 20, bottom: 42, left: 72 };
   const values = stacked
     ? series.map((point) => keys.reduce((total, key) => total + toFiniteNumber(point[key]), 0))
     : series.flatMap((point) => keys.map((key) => point[key]));
@@ -1238,7 +1255,7 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
         });
         context.font = '700 12px system-ui, sans-serif';
         context.fillStyle = '#253044';
-        context.fillText(formatter(cumulative), x, Math.max(yFor(cumulative) - 7, padding.top + 4));
+        context.fillText(formatter(cumulative), x, Math.max(yFor(cumulative) - 8, 12));
       });
     } else {
       context.font = '600 11px system-ui, sans-serif';
@@ -1253,7 +1270,7 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
           }
           labelYs.push(y);
           context.fillStyle = '#253044';
-          context.fillText(formatter(point[key]), x, Math.max(y, padding.top + 4));
+          context.fillText(formatter(point[key]), x, Math.max(y, 12));
         });
       });
     }
@@ -1351,8 +1368,10 @@ function renderCharts(result, inputs, chartOptions = {}) {
       inputs.targetPlatform || translate(language, 'charts.legendTarget'),
     ],
   });
+  // Single series: the y-axis carries the actual per-year figures, so on-point
+  // labels and a one-entry legend would just repeat them.
   drawChart(getElement('savingsChart'), series, ['netSavings'], ['#7c3aed'], formatValue, {
-    pointLabels,
+    valueTicks: true,
     seriesLabels: [translate(language, 'charts.legendSavings')],
   });
   drawBarChart(getElement('annualOutlayChart'), buildAnnualOutlaySeries(result, inputs.years), ['currentOutlay', 'targetOutlay'], ['#2155d6', '#0f8f5f'], formatValue, {
