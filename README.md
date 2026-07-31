@@ -27,6 +27,7 @@ VirtROI estimates:
 - a break-even card translating the decision into concrete unit prices: the target price at which the case stops paying off, and the current-platform price that would keep you where you are
 - currency output in USD, EUR, GBP, JPY, or BRL
 - recurring cost inputs as annualized amounts or totals for the selected analysis period
+- per-platform pricing entered either as a net unit price or as a list price with a negotiated discount
 - language options for English, Spanish, Portuguese, Italian, Japanese, and German
 - an editable report that can include chart snapshots and be exported to PDF with the browser print dialog
 
@@ -162,6 +163,17 @@ The scenario comparison chart spans the full width of the charts grid and overla
 
 Below the calculator, the scenario library snapshots the current inputs under a name (stored in `localStorage`, so nothing leaves the browser) and compares saved scenarios side by side: annual savings, payback, net savings, ROI, and the decision signal, with the live inputs always shown as the first row. Each saved scenario can be loaded back into the form or deleted. **Copy share link** produces a URL that encodes every input as a query parameter, so a colleague opening the link sees the same scenario without anything being uploaded.
 
+### Net price or list price + discount
+
+Each platform's pricing block has a **Price entry** selector:
+
+- **Net price** — type the final per-core or per-socket price directly, for when that is all you have.
+- **List price + discount** — type the vendor's list price and the negotiated discount percentage. VirtROI applies `list × (1 − discount ÷ 100)` and shows the resulting effective price under the discount field, so the quote stays documented in the form the vendor presented it.
+
+Both modes feed the same calculation and interact normally with the annualized/total cost period selector, so a three-year list price with a discount works exactly like a three-year net price. Discounts are clamped to 0–100%. Scenarios saved before this existed keep working: a scenario with no entry mode is treated as a net price.
+
+When the target uses list entry, the break-even card additionally states break-even as a discount off list — the number to walk into a negotiation with — or, if break-even sits above list, how much headroom you have.
+
 ### Break-even unit prices
 
 The results grid includes a break-even card that converts the whole cost model into two concrete numbers: the **target unit price** at which net savings over the analysis period hit zero (the maximum you should accept when negotiating the target quote), and the **current-platform unit price** at which staying put costs the same as switching (the renewal discount that would kill the case).
@@ -213,7 +225,7 @@ Total cores = hosts × sockets per host × cores per socket
 Total sockets = hosts × sockets per host
 Absolute mode total cores = entered total cores
 Absolute mode total sockets = entered total sockets
-License annual cost = unit price × selected quantity, either total cores or total sockets
+License annual cost = effective unit price × selected quantity, either total cores or total sockets
 Total annual cost = license annual cost + additional annual costs
 Annual savings = current annual cost - target annual cost
 One-time costs = migration services + hardware purchases + renewals/extensions

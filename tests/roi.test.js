@@ -23,6 +23,9 @@ const {
   getCostPeriodOptions,
   getPricingMetricLabelKey,
   getUnitPriceLabelKey,
+  getListUnitPriceLabelKey,
+  resolveUnitPrice,
+  computeDiscountFromList,
   shouldUseDashedSegment,
   buildDashedLineSegments,
   getLanguageOptions,
@@ -61,6 +64,97 @@ test('calculateRoi computes the default Product 1 to Product 2 scenario', () => 
     paybackYears: 0.39215686274509803,
     roiPercent: 665,
   });
+});
+
+test('resolveUnitPrice takes the net price directly or derives it from list minus discount', () => {
+  assert.equal(resolveUnitPrice('net', 4500, 9000, 50), 4500);
+  assert.equal(resolveUnitPrice('list', 4500, 5000, 10), 4500);
+  assert.equal(resolveUnitPrice('list', 0, 6000, 33.5), 3990);
+  // A missing mode behaves like net entry, so scenarios saved before this
+  // existed keep resolving to the price they were saved with.
+  assert.equal(resolveUnitPrice(undefined, 400, 9999, 90), 400);
+  // Discounts are clamped into 0–100%, so a stray value cannot invert the price.
+  assert.equal(resolveUnitPrice('list', 0, 5000, 140), 0);
+  assert.equal(resolveUnitPrice('list', 0, 5000, -20), 5000);
+  assert.equal(resolveUnitPrice('list', 0, 5000, 'abc'), 5000);
+});
+
+test('calculateRoi produces identical results from a net price and the list/discount pair behind it', () => {
+  const base = {
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    migrationCost: 40000,
+    years: 3,
+  };
+
+  const net = calculateRoi({ ...base, currentUnitPricePerYear: 400, targetUnitPricePerYear: 4500 });
+  const list = calculateRoi({
+    ...base,
+    currentPriceEntryMode: 'list',
+    targetPriceEntryMode: 'list',
+    // 500 less 20% and 6,000 less 25% land on the same net prices.
+    currentListUnitPricePerYear: 500,
+    currentDiscountPercent: 20,
+    targetListUnitPricePerYear: 6000,
+    targetDiscountPercent: 25,
+  });
+
+  assert.deepEqual(list, net);
+  assert.equal(list.currentLicenseAnnualCost, 192000);
+  assert.equal(list.targetLicenseAnnualCost, 90000);
+});
+
+test('list pricing composes with the total-period cost input mode', () => {
+  const totals = calculateRoi({
+    inputMode: 'topology',
+    hosts: 10,
+    socketsPerHost: 2,
+    coresPerSocket: 24,
+    currentPricingMetric: 'core',
+    targetPricingMetric: 'socket',
+    currentPriceEntryMode: 'list',
+    targetPriceEntryMode: 'list',
+    // 3-year totals: 1,500 less 20% = 1,200/core, 18,000 less 25% = 13,500/socket.
+    currentListUnitPricePerYear: 1500,
+    currentDiscountPercent: 20,
+    targetListUnitPricePerYear: 18000,
+    targetDiscountPercent: 25,
+    migrationCost: 40000,
+    years: 3,
+    costInputPeriod: 'total',
+  });
+
+  assert.equal(totals.currentAnnualCost, 192000);
+  assert.equal(totals.targetAnnualCost, 90000);
+});
+
+test('computeDiscountFromList expresses a net price as a discount off list', () => {
+  assert.equal(computeDiscountFromList(6000, 4500), 25);
+  assert.equal(computeDiscountFromList(5000, 5000), 0);
+  assert.equal(computeDiscountFromList(4000, 5000), -25);
+  assert.equal(computeDiscountFromList(0, 4500), null);
+});
+
+test('list price labels follow the annualized vs total cost period', () => {
+  assert.equal(getListUnitPriceLabelKey('annual'), 'forms.listUnitPriceYear');
+  assert.equal(getListUnitPriceLabelKey('total'), 'forms.listUnitPriceTotal');
+});
+
+test('both pricing fieldsets expose net and list entry fields', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  ['current', 'target'].forEach((side) => {
+    assert.ok(html.includes(`id="${side}PriceEntryMode"`));
+    assert.ok(html.includes(`id="${side}ListUnitPricePerYear"`));
+    assert.ok(html.includes(`id="${side}DiscountPercent"`));
+    assert.ok(html.includes(`id="${side}EffectivePrice"`));
+    assert.ok(html.includes(`class="price-list-field" data-price-side="${side}" hidden`));
+  });
+  assert.ok(html.includes('data-i18n="options.priceEntryList"'));
 });
 
 test('calculateRoi supports pricing both products per socket with additional annual costs', () => {

@@ -243,6 +243,11 @@ label {
   background: #fbfdff;
 }
 
+.price-list-field small {
+  color: var(--brand-dark);
+  font-weight: 800;
+}
+
 .field-group legend {
   padding: 0 8px;
   color: var(--brand-dark);

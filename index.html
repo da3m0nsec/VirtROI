@@ -122,8 +122,27 @@
                 </label>
 
                 <label>
+                  <span data-i18n="forms.priceEntryMode">Price entry</span>
+                  <select id="currentPriceEntryMode">
+                    <option value="net" selected data-i18n="options.priceEntryNet">Net price</option>
+                    <option value="list" data-i18n="options.priceEntryList">List price + discount</option>
+                  </select>
+                </label>
+
+                <label class="price-net-field" data-price-side="current">
                   <span id="currentUnitPriceLabel" data-i18n="forms.unitPriceYear">Unit price / year</span>
                   <input id="currentUnitPricePerYear" type="number" value="400" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label class="price-list-field" data-price-side="current" hidden>
+                  <span id="currentListUnitPriceLabel" data-i18n="forms.listUnitPriceYear">List price / year</span>
+                  <input id="currentListUnitPricePerYear" type="number" value="400" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label class="price-list-field" data-price-side="current" hidden>
+                  <span data-i18n="forms.discountPercent">Discount %</span>
+                  <input id="currentDiscountPercent" type="number" value="0" min="0" max="100" step="1" inputmode="decimal" />
+                  <small id="currentEffectivePrice">Effective $400</small>
                 </label>
 
                 <label>
@@ -146,8 +165,27 @@
                 </label>
 
                 <label>
+                  <span data-i18n="forms.priceEntryMode">Price entry</span>
+                  <select id="targetPriceEntryMode">
+                    <option value="net" selected data-i18n="options.priceEntryNet">Net price</option>
+                    <option value="list" data-i18n="options.priceEntryList">List price + discount</option>
+                  </select>
+                </label>
+
+                <label class="price-net-field" data-price-side="target">
                   <span id="targetUnitPriceLabel" data-i18n="forms.unitPriceYear">Unit price / year</span>
                   <input id="targetUnitPricePerYear" type="number" value="4500" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label class="price-list-field" data-price-side="target" hidden>
+                  <span id="targetListUnitPriceLabel" data-i18n="forms.listUnitPriceYear">List price / year</span>
+                  <input id="targetListUnitPricePerYear" type="number" value="4500" min="0" step="1" inputmode="decimal" />
+                </label>
+
+                <label class="price-list-field" data-price-side="target" hidden>
+                  <span data-i18n="forms.discountPercent">Discount %</span>
+                  <input id="targetDiscountPercent" type="number" value="0" min="0" max="100" step="1" inputmode="decimal" />
+                  <small id="targetEffectivePrice">Effective $4,500</small>
                 </label>
 
                 <label>
@@ -380,7 +418,8 @@
       <dl class="formula-grid">
         <div><dt data-i18n="formulas.totalCores.title">Total cores</dt><dd data-i18n="formulas.totalCores.description">topology mode: hosts × sockets per host × cores per socket; absolute mode: total cores</dd></div>
         <div><dt data-i18n="formulas.totalSockets.title">Total sockets</dt><dd data-i18n="formulas.totalSockets.description">topology mode: hosts × sockets per host; absolute mode: total sockets</dd></div>
-        <div><dt data-i18n="formulas.licenseAnnualCost.title">License annual cost</dt><dd data-i18n="formulas.licenseAnnualCost.description">unit price × selected metric quantity: cores or sockets</dd></div>
+        <div><dt data-i18n="formulas.effectiveUnitPrice.title">Effective unit price</dt><dd data-i18n="formulas.effectiveUnitPrice.description">net entry: the price as typed; list entry: list price × (1 − discount % ÷ 100)</dd></div>
+        <div><dt data-i18n="formulas.licenseAnnualCost.title">License annual cost</dt><dd data-i18n="formulas.licenseAnnualCost.description">effective unit price × selected metric quantity: cores or sockets</dd></div>
         <div><dt data-i18n="formulas.totalAnnualCost.title">Total annual cost</dt><dd data-i18n="formulas.totalAnnualCost.description">license annual cost + additional annual costs</dd></div>
         <div><dt data-i18n="formulas.annualSavings.title">Annual savings</dt><dd data-i18n="formulas.annualSavings.description">current annual cost − target annual cost</dd></div>
         <div><dt data-i18n="formulas.paybackYears.title">Payback years</dt><dd data-i18n="formulas.paybackYears.description">one-time costs ÷ annual savings</dd></div>

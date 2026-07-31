@@ -9,8 +9,14 @@ const DEFAULT_INPUTS = {
   totalCores: 480,
   currentPricingMetric: 'core',
   targetPricingMetric: 'socket',
+  currentPriceEntryMode: 'net',
+  targetPriceEntryMode: 'net',
   currentUnitPricePerYear: 400,
   targetUnitPricePerYear: 4500,
+  currentListUnitPricePerYear: 400,
+  targetListUnitPricePerYear: 4500,
+  currentDiscountPercent: 0,
+  targetDiscountPercent: 0,
   currentAdditionalAnnualCost: 0,
   targetAdditionalAnnualCost: 0,
   migrationCost: 40000,
@@ -81,6 +87,10 @@ const NUMERIC_INPUT_KEYS = new Set([
   'totalCores',
   'currentUnitPricePerYear',
   'targetUnitPricePerYear',
+  'currentListUnitPricePerYear',
+  'targetListUnitPricePerYear',
+  'currentDiscountPercent',
+  'targetDiscountPercent',
   'currentAdditionalAnnualCost',
   'targetAdditionalAnnualCost',
   'migrationCost',
@@ -129,6 +139,37 @@ function getPricingMetricLabelKey(metric, costInputPeriod = DEFAULT_INPUTS.costI
 
 function getUnitPriceLabelKey(costInputPeriod = DEFAULT_INPUTS.costInputPeriod) {
   return costInputPeriod === 'total' ? 'forms.unitPriceTotal' : 'forms.unitPriceYear';
+}
+
+function getListUnitPriceLabelKey(costInputPeriod = DEFAULT_INPUTS.costInputPeriod) {
+  return costInputPeriod === 'total' ? 'forms.listUnitPriceTotal' : 'forms.listUnitPriceYear';
+}
+
+// A quote is usually a list price with a negotiated discount; net entry stays
+// available for when only the final number is known.
+function resolveUnitPrice(entryMode, netPrice, listPrice, discountPercent) {
+  if (entryMode !== 'list') {
+    return toFiniteNumber(netPrice);
+  }
+  const list = toFiniteNumber(listPrice);
+  const discount = Math.min(100, Math.max(0, toFiniteNumber(discountPercent)));
+  return roundTo(list * (1 - discount / 100), 2);
+}
+
+function resolveSideUnitPrice(inputs, side) {
+  const capitalized = side === 'target' ? 'target' : 'current';
+  return resolveUnitPrice(
+    inputs[`${capitalized}PriceEntryMode`] || DEFAULT_INPUTS[`${capitalized}PriceEntryMode`],
+    inputs[`${capitalized}UnitPricePerYear`] ?? DEFAULT_INPUTS[`${capitalized}UnitPricePerYear`],
+    inputs[`${capitalized}ListUnitPricePerYear`],
+    inputs[`${capitalized}DiscountPercent`],
+  );
+}
+
+function computeDiscountFromList(listPrice, netPrice) {
+  const list = toFiniteNumber(listPrice);
+  if (list <= 0) return null;
+  return roundTo((1 - toFiniteNumber(netPrice) / list) * 100, 1);
 }
 
 function shouldUseDashedSegment(previousPoint, currentPoint) {
@@ -215,8 +256,26 @@ function calculateRoi(inputs) {
   const targetPricingMetric = inputs.targetPricingMetric || DEFAULT_INPUTS.targetPricingMetric;
   const years = toFiniteNumber(inputs.years, DEFAULT_INPUTS.years);
   const costInputPeriod = inputs.costInputPeriod || DEFAULT_INPUTS.costInputPeriod;
-  const currentUnitPricePerYear = annualizeCost(inputs.currentUnitPricePerYear ?? inputs.currentPricePerCorePerYear ?? DEFAULT_INPUTS.currentUnitPricePerYear, costInputPeriod, years);
-  const targetUnitPricePerYear = annualizeCost(inputs.targetUnitPricePerYear ?? inputs.targetPricePerSocketPerYear ?? DEFAULT_INPUTS.targetUnitPricePerYear, costInputPeriod, years);
+  const currentUnitPricePerYear = annualizeCost(
+    resolveUnitPrice(
+      inputs.currentPriceEntryMode || DEFAULT_INPUTS.currentPriceEntryMode,
+      inputs.currentUnitPricePerYear ?? inputs.currentPricePerCorePerYear ?? DEFAULT_INPUTS.currentUnitPricePerYear,
+      inputs.currentListUnitPricePerYear,
+      inputs.currentDiscountPercent,
+    ),
+    costInputPeriod,
+    years,
+  );
+  const targetUnitPricePerYear = annualizeCost(
+    resolveUnitPrice(
+      inputs.targetPriceEntryMode || DEFAULT_INPUTS.targetPriceEntryMode,
+      inputs.targetUnitPricePerYear ?? inputs.targetPricePerSocketPerYear ?? DEFAULT_INPUTS.targetUnitPricePerYear,
+      inputs.targetListUnitPricePerYear,
+      inputs.targetDiscountPercent,
+    ),
+    costInputPeriod,
+    years,
+  );
   const currentAdditionalAnnualCost = annualizeCost(inputs.currentAdditionalAnnualCost, costInputPeriod, years);
   const targetAdditionalAnnualCost = annualizeCost(inputs.targetAdditionalAnnualCost, costInputPeriod, years);
   const migrationCost = toFiniteNumber(inputs.migrationCost);
@@ -549,8 +608,14 @@ function getInputs() {
     totalCores: toFiniteNumber(getValue('absoluteCores', DEFAULT_INPUTS.totalCores)),
     currentPricingMetric: getValue('currentPricingMetric', DEFAULT_INPUTS.currentPricingMetric),
     targetPricingMetric: getValue('targetPricingMetric', DEFAULT_INPUTS.targetPricingMetric),
+    currentPriceEntryMode: getValue('currentPriceEntryMode', DEFAULT_INPUTS.currentPriceEntryMode),
+    targetPriceEntryMode: getValue('targetPriceEntryMode', DEFAULT_INPUTS.targetPriceEntryMode),
     currentUnitPricePerYear: toFiniteNumber(getValue('currentUnitPricePerYear', DEFAULT_INPUTS.currentUnitPricePerYear)),
     targetUnitPricePerYear: toFiniteNumber(getValue('targetUnitPricePerYear', DEFAULT_INPUTS.targetUnitPricePerYear)),
+    currentListUnitPricePerYear: toFiniteNumber(getValue('currentListUnitPricePerYear', DEFAULT_INPUTS.currentListUnitPricePerYear)),
+    targetListUnitPricePerYear: toFiniteNumber(getValue('targetListUnitPricePerYear', DEFAULT_INPUTS.targetListUnitPricePerYear)),
+    currentDiscountPercent: toFiniteNumber(getValue('currentDiscountPercent', DEFAULT_INPUTS.currentDiscountPercent)),
+    targetDiscountPercent: toFiniteNumber(getValue('targetDiscountPercent', DEFAULT_INPUTS.targetDiscountPercent)),
     currentAdditionalAnnualCost: toFiniteNumber(getValue('currentAdditionalAnnualCost', DEFAULT_INPUTS.currentAdditionalAnnualCost)),
     targetAdditionalAnnualCost: toFiniteNumber(getValue('targetAdditionalAnnualCost', DEFAULT_INPUTS.targetAdditionalAnnualCost)),
     migrationCost: toFiniteNumber(getValue('migrationCost', DEFAULT_INPUTS.migrationCost)),
@@ -573,13 +638,33 @@ function toggleInputMode(inputMode) {
   }
 }
 
+function togglePriceEntryMode(side, mode) {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll(`[data-price-side="${side}"]`).forEach((field) => {
+    const isListField = field.classList.contains('price-list-field');
+    field.hidden = mode === 'list' ? !isListField : isListField;
+  });
+}
+
 function refreshPricingPeriodLabels(inputs = getInputs()) {
   const language = getCurrentLanguage();
   const period = inputs.costInputPeriod || DEFAULT_INPUTS.costInputPeriod;
   const unitPriceLabel = translate(language, getUnitPriceLabelKey(period));
+  const listPriceLabel = translate(language, getListUnitPriceLabelKey(period));
+  const currency = inputs.currency || getCurrentCurrency();
 
   setText('currentUnitPriceLabel', unitPriceLabel);
   setText('targetUnitPriceLabel', unitPriceLabel);
+  setText('currentListUnitPriceLabel', listPriceLabel);
+  setText('targetListUnitPriceLabel', listPriceLabel);
+
+  ['current', 'target'].forEach((side) => {
+    const mode = inputs[`${side}PriceEntryMode`] || DEFAULT_INPUTS[`${side}PriceEntryMode`];
+    togglePriceEntryMode(side, mode);
+    setText(`${side}EffectivePrice`, translate(language, 'forms.effectivePrice', {
+      price: formatCurrency(resolveSideUnitPrice(inputs, side), currency),
+    }));
+  });
 
   [
     { id: 'currentPricingMetric', metric: inputs.currentPricingMetric || DEFAULT_INPUTS.currentPricingMetric },
@@ -951,12 +1036,30 @@ function renderResults(result, inputs) {
   const currentUnitLabel = translate(language, getPricingMetricLabelKey(inputs.currentPricingMetric, 'annual'));
   const notAvailable = translate(language, 'format.notAvailable');
   setText('targetBreakEvenPrice', breakEven.targetUnitPrice === null ? notAvailable : formatCurrency(breakEven.targetUnitPrice, currency));
-  setText('breakEvenContext', translate(language, 'metrics.breakEvenDetail', {
+
+  let breakEvenText = translate(language, 'metrics.breakEvenDetail', {
     unit: targetUnitLabel.toLowerCase(),
     quote: formatCurrency(result.targetLicenseAnnualCost / Math.max(1, inputs.targetPricingMetric === 'socket' ? result.totalSockets : result.totalCores), currency),
     current: breakEven.currentUnitPrice === null ? notAvailable : formatCurrency(breakEven.currentUnitPrice, currency),
     currentUnit: currentUnitLabel.toLowerCase(),
-  }));
+  });
+
+  // When the target is quoted off a list price, restate break-even as the
+  // discount you would have to negotiate.
+  if ((inputs.targetPriceEntryMode || DEFAULT_INPUTS.targetPriceEntryMode) === 'list' && breakEven.targetUnitPrice !== null) {
+    const annualListPrice = annualizeCost(inputs.targetListUnitPricePerYear, inputs.costInputPeriod, toFiniteNumber(inputs.years, DEFAULT_INPUTS.years));
+    const breakEvenDiscount = computeDiscountFromList(annualListPrice, breakEven.targetUnitPrice);
+    if (breakEvenDiscount !== null) {
+      // A negative "discount" means break-even sits above list: that is headroom,
+      // not a discount you need to negotiate.
+      const key = breakEvenDiscount >= 0 ? 'metrics.breakEvenDiscount' : 'metrics.breakEvenPremium';
+      breakEvenText += ` ${translate(language, key, {
+        discount: `${roundTo(Math.abs(breakEvenDiscount), 1).toLocaleString('en-US')}%`,
+      })}`;
+    }
+  }
+
+  setText('breakEvenContext', breakEvenText);
 
   if (decisionCard) {
     decisionCard.className = `decision-card ${decision.tone}`;
@@ -1768,6 +1871,9 @@ if (typeof module !== 'undefined') {
     getCostPeriodOptions,
     getPricingMetricLabelKey,
     getUnitPriceLabelKey,
+    getListUnitPriceLabelKey,
+    resolveUnitPrice,
+    computeDiscountFromList,
     shouldUseDashedSegment,
     buildDashedLineSegments,
     formatYears,
