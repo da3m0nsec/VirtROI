@@ -46,6 +46,12 @@ The logo kit lives in `assets/`, with usage rules in [`assets/BRAND.md`](assets/
 
 The reversed lockups, tagline lockups, mono and knockout icons ship in `assets/` for slides and docs; nothing in the app renders on a dark background where they would apply.
 
+### Interface palette
+
+The UI chrome follows the logo kit: deep green `#0F6E56` as the primary, ink `#04342C` for headings and the decision-card gradient, and green-grey neutrals (`--bg`, `--border`, `--surface-muted`) so surfaces sit under the mark rather than fighting it. Interactive colours were contrast-checked against their real backgrounds — every one clears 4.5:1, including the amber "worth evaluating" state, which is deliberately darker than the amber chart series so white chip text stays legible.
+
+Chart series colours live in their own `--series-1..4` variables, deliberately **not** tied to `--brand`. The canvas draws raw hex, so if a legend swatch pointed at `--brand` it would silently drift out of sync the moment the brand colour moved. A test asserts the swatch variables and the JS series palette stay identical. The series palette itself is validated for colour-vision separation.
+
 **The generated report is deliberately unbranded** — no VirtROI name, logo, or filename appears in the report, its PDF export, the standalone HTML download, or the graphs PNG, so it can be circulated as a neutral business case. Exports are named `cost-analysis-report-<date>.html` and `cost-analysis-graphs-<date>.png`, and the report is titled "Virtualization cost analysis" in each language.
 
 ## Capacity input modes

@@ -53,7 +53,7 @@ const SCENARIO_STORAGE_KEY = 'virtroi.scenarios';
 
 // Fixed categorical order: current inputs always blue, saved scenarios keep
 // their color as long as their position in the library is stable.
-const SCENARIO_COLORS = ['#2155d6', '#0f8f5f', '#7c3aed', '#b7791f'];
+const SCENARIO_COLORS = ['#2155d6', '#1d9e75', '#7c3aed', '#b7791f'];
 
 const MAX_OVERLAY_SCENARIOS = 4;
 
@@ -888,29 +888,30 @@ function downloadReportAsHtml() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(title)}</title>
   <style>
-    body { margin: 0; padding: 32px; color: #111827; background: #f5f7fb; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .report-document { max-width: 980px; margin: 0 auto; border: 1px solid #d9e1ef; border-radius: 24px; padding: 32px; background: #fff; }
+    body { margin: 0; padding: 32px; color: #0f221d; background: #f4f8f6; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .report-document { max-width: 980px; margin: 0 auto; border: 1px solid #d3e3dc; border-radius: 24px; padding: 32px; background: #fff; }
     h1 { margin-top: 0; font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: -0.055em; }
     h2 { margin-top: 28px; }
     .report-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .report-metrics div { border: 1px solid #d9e1ef; border-radius: 16px; padding: 14px; background: #fbfdff; }
-    .report-metrics dt { color: #5b6475; font-size: 0.82rem; font-weight: 850; text-transform: uppercase; }
+    .report-metrics div { border: 1px solid #d3e3dc; border-radius: 16px; padding: 14px; background: #f8fbf9; }
+    .report-metrics dt { color: #5a6661; font-size: 0.82rem; font-weight: 850; text-transform: uppercase; }
     .report-metrics dd { margin: 4px 0 0; font-size: 1.35rem; font-weight: 850; }
     .report-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
     .report-chart-grid figure { margin: 0; }
     .report-chart-grid figcaption { margin-bottom: 6px; font-weight: 850; }
-    .report-chart-grid img { width: 100%; border: 1px solid #d9e1ef; border-radius: 16px; }
-    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; color: #5b6475; font-size: 0.85rem; font-weight: 700; }
+    .report-chart-grid img { width: 100%; border: 1px solid #d3e3dc; border-radius: 16px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; color: #5a6661; font-size: 0.85rem; font-weight: 700; }
     .legend i { display: inline-block; width: 11px; height: 11px; margin-right: 6px; border-radius: 999px; }
-    .legend-current { background: #2155d6; }
-    .legend-target { background: #0f8f5f; }
-    .legend-savings { background: #7c3aed; }
+    .legend-current, .legend-license { background: #2155d6; }
+    .legend-target { background: #1d9e75; }
+    .legend-savings, .legend-onetime { background: #7c3aed; }
+    .legend-addons { background: #b7791f; }
     .report-table-wrap { overflow-x: auto; }
     .report-year-table { width: 100%; border-collapse: collapse; }
-    .report-year-table th, .report-year-table td { border-bottom: 1px solid #d9e1ef; padding: 9px 12px; text-align: right; }
+    .report-year-table th, .report-year-table td { border-bottom: 1px solid #d3e3dc; padding: 9px 12px; text-align: right; }
     .report-year-table td { white-space: nowrap; }
     .report-year-table th:first-child, .report-year-table td:first-child { text-align: left; }
-    .report-year-table th { color: #5b6475; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .report-year-table th { color: #5a6661; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
     .report-year-table tr.projected td { color: #8a5a12; }
     .report-note { color: #8a5a12; font-size: 0.88rem; }
     @media (max-width: 720px) { body { padding: 16px; } .report-document, .report-metrics, .report-chart-grid { display: block; } .report-metrics div, .report-chart-grid img { margin-bottom: 12px; } }
@@ -968,13 +969,13 @@ function downloadGraphsAsPng() {
 
   context.fillStyle = '#ffffff';
   context.fillRect(0, 0, width, height);
-  context.fillStyle = '#111827';
+  context.fillStyle = '#0f221d';
   context.font = '700 24px system-ui, sans-serif';
   context.fillText(translate(language, 'report.generatedTitle'), padding, padding + 8);
 
   let y = padding + titleHeight;
   charts.forEach((chart) => {
-    context.fillStyle = '#111827';
+    context.fillStyle = '#0f221d';
     context.font = '700 18px system-ui, sans-serif';
     context.fillText(chart.title, padding, y);
     y += 12;
@@ -1115,9 +1116,9 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
   const xFor = (index) => padding.left + (plotWidth * index) / (series.length - 1 || 1);
   const yFor = (value) => padding.top + plotHeight - ((value - minValue) / range) * plotHeight;
 
-  context.strokeStyle = '#d9e1ef';
+  context.strokeStyle = '#d3e3dc';
   context.lineWidth = 1;
-  context.fillStyle = '#5b6475';
+  context.fillStyle = '#5a6661';
   context.font = '12px system-ui, sans-serif';
 
   // A single-series chart can label the axis with its own per-year values, so the
@@ -1145,7 +1146,7 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
 
   if (options.zeroBaseline && minValue < 0 && maxValue > 0) {
     const zeroY = yFor(0);
-    context.strokeStyle = '#9aa5b8';
+    context.strokeStyle = '#93a8a0';
     context.lineWidth = 1.5;
     context.beginPath();
     context.moveTo(padding.left, zeroY);
@@ -1172,7 +1173,7 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
   context.textAlign = 'center';
   labelIndexes.forEach((index) => {
     const point = series[index];
-    context.fillStyle = isAccented(point) ? accentColor : '#5b6475';
+    context.fillStyle = isAccented(point) ? accentColor : '#5a6661';
     context.fillText(axisLabel(point), xFor(index), height - 14);
   });
   context.textAlign = 'left';
@@ -1211,7 +1212,7 @@ function drawChart(canvas, series, keys, colors, formatter, options = {}) {
         // point belongs in the headroom above the first gridline.
         const y = Math.min(Math.max(yFor(point[key]) + offset, 12), height - padding.bottom + 12);
         context.textAlign = index === 0 ? 'left' : index === series.length - 1 ? 'right' : 'center';
-        context.fillStyle = '#253044';
+        context.fillStyle = '#1f3a33';
         context.fillText(formatter(point[key]), x, y);
       });
     });
@@ -1269,9 +1270,9 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
   const yFor = (value) => padding.top + plotHeight - (Math.max(0, value) / range) * plotHeight;
   const baselineY = yFor(0);
 
-  context.strokeStyle = '#d9e1ef';
+  context.strokeStyle = '#d3e3dc';
   context.lineWidth = 1;
-  context.fillStyle = '#5b6475';
+  context.fillStyle = '#5a6661';
   context.font = '12px system-ui, sans-serif';
 
   for (let i = 0; i <= 4; i += 1) {
@@ -1286,7 +1287,7 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
 
   context.textAlign = 'center';
   series.forEach((point, index) => {
-    context.fillStyle = isAccented(point) ? accentColor : '#5b6475';
+    context.fillStyle = isAccented(point) ? accentColor : '#5a6661';
     context.fillText(axisLabel(point), groupCenter(index), height - 14);
   });
   context.textAlign = 'left';
@@ -1357,7 +1358,7 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
           cumulative += value;
         });
         context.font = '700 12px system-ui, sans-serif';
-        context.fillStyle = '#253044';
+        context.fillStyle = '#1f3a33';
         context.fillText(formatter(cumulative), x, Math.max(yFor(cumulative) - 8, 12));
       });
     } else {
@@ -1372,7 +1373,7 @@ function drawBarChart(canvas, series, keys, colors, formatter, options = {}) {
             y -= 12;
           }
           labelYs.push(y);
-          context.fillStyle = '#253044';
+          context.fillStyle = '#1f3a33';
           context.fillText(formatter(point[key]), x, Math.max(y, 12));
         });
       });
@@ -1464,7 +1465,7 @@ function renderCharts(result, inputs, chartOptions = {}) {
   const formatValue = (value) => formatCurrency(value, currency);
   const pointLabels = Boolean(chartOptions.pointLabels);
 
-  drawChart(getElement('costChart'), series, ['currentCost', 'targetCost'], ['#2155d6', '#0f8f5f'], formatValue, {
+  drawChart(getElement('costChart'), series, ['currentCost', 'targetCost'], ['#2155d6', '#1d9e75'], formatValue, {
     pointLabels,
     seriesLabels: [
       inputs.currentPlatform || translate(language, 'charts.legendCurrent'),
@@ -1477,7 +1478,7 @@ function renderCharts(result, inputs, chartOptions = {}) {
     valueTicks: true,
     seriesLabels: [translate(language, 'charts.legendSavings')],
   });
-  drawBarChart(getElement('annualOutlayChart'), buildAnnualOutlaySeries(result, inputs.years), ['currentOutlay', 'targetOutlay'], ['#2155d6', '#0f8f5f'], formatValue, {
+  drawBarChart(getElement('annualOutlayChart'), buildAnnualOutlaySeries(result, inputs.years), ['currentOutlay', 'targetOutlay'], ['#2155d6', '#1d9e75'], formatValue, {
     pointLabels,
     seriesLabels: [
       inputs.currentPlatform || translate(language, 'charts.legendCurrentOutlay'),

@@ -643,6 +643,39 @@ test('no report-facing string carries the VirtROI name', () => {
   assert.equal(/virtroi-report|virtroi-graphs|VirtROI graphs|VirtROI chart/.test(app), false);
 });
 
+test('legend swatches use the same colours the canvas draws', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+
+  const series = [1, 2, 3, 4].map((n) => {
+    const match = css.match(new RegExp(`--series-${n}:\\s*(#[0-9a-f]{6})`, 'i'));
+    assert.ok(match, `--series-${n} is not defined`);
+    return match[1].toLowerCase();
+  });
+
+  // The scenario overlay palette in JS is the source of truth for the swatches.
+  const scenarioColors = app
+    .match(/const SCENARIO_COLORS = \[([^\]]+)\]/)[1]
+    .match(/#[0-9a-f]{6}/gi)
+    .map((hex) => hex.toLowerCase());
+  assert.deepEqual(series, scenarioColors);
+
+  // Legend classes must resolve to the series vars, never to --brand, which is
+  // free to follow the logo without dragging the chart colours along.
+  ['legend-current', 'legend-target', 'legend-savings', 'legend-license', 'legend-addons', 'legend-onetime']
+    .forEach((className) => {
+      const rule = css.match(new RegExp(`\\.${className} \\{ background: (var\\(--[a-z0-9-]+\\)); \\}`));
+      assert.ok(rule, `${className} has no swatch rule`);
+      assert.match(rule[1], /var\(--series-[1-4]\)/, `${className} should use a --series-* colour, got ${rule[1]}`);
+    });
+
+  // The standalone HTML export inlines the same hexes, including the
+  // composition legend classes that only appear in that chart.
+  ['legend-license', 'legend-addons', 'legend-onetime'].forEach((className) => {
+    assert.ok(app.includes(className), `export CSS is missing ${className}`);
+  });
+});
+
 test('brand assets are wired into the page head and nav', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
